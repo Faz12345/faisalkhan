@@ -1,0 +1,59 @@
+
+{% extends "base.html" %}
+{% block content %}
+<section class="max-w-5xl mx-auto px-6 py-14">
+  <div class="flex items-end justify-between flex-wrap gap-4">
+    <div>
+      <span class="text-xs uppercase tracking-[0.2em] text-mint-700 font-semibold">Your visits</span>
+      <h1 class="font-display text-5xl mt-1" data-testid="my-appts-title">Hello, <span class="italic text-mint-700">{{ user.name.split(' ')[0] }}.</span></h1>
+      <p class="text-ink-700 mt-2">Manage upcoming visits and revisit past treatment notes below.</p>
+    </div>
+    <a href="/api/book" class="btn-primary" data-testid="my-appts-book-btn">+ Book a new visit</a>
+  </div>
+
+  <h2 class="font-display text-2xl mt-12">Appointments</h2>
+  {% if appointments %}
+    <div class="mt-4 grid gap-3">
+      {% for a in appointments %}
+        <div class="card p-5 flex flex-wrap items-center justify-between gap-4" data-testid="appt-row-{{ a.id }}">
+          <div>
+            <div class="font-display text-xl">{{ a.date }} · {{ a.time_slot }}</div>
+            <div class="text-sm text-ink-700 mt-1">{{ a.reason }}</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="badge badge-{{ a.status }}">{{ a.status }}</span>
+            {% if a.status in ['pending','confirmed'] %}
+              <form method="post" action="/api/appointment/{{ a.id }}/cancel">
+                <button class="btn-outline text-xs" data-testid="cancel-appt-{{ a.id }}">Cancel</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card p-8 mt-4 text-center">
+      <p class="text-ink-700">No appointments yet. <a href="/api/book" class="text-mint-700 font-semibold link-underline">Book your first visit</a>.</p>
+    </div>
+  {% endif %}
+
+  <h2 class="font-display text-2xl mt-12">Treatment history</h2>
+  {% if treatments %}
+    <div class="mt-4 space-y-3">
+      {% for t in treatments %}
+        <div class="card p-5" data-testid="treatment-row-{{ t.id }}">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div class="font-display text-lg">{{ t.diagnosis }}</div>
+            <div class="text-xs text-ink-700 uppercase tracking-wider">{{ t.date }}</div>
+          </div>
+          <div class="text-sm text-ink-700 mt-2"><b class="text-ink-900">Treatment:</b> {{ t.treatment }}</div>
+          {% if t.notes %}<div class="text-sm text-ink-700 mt-1"><b class="text-ink-900">Notes:</b> {{ t.notes }}</div>{% endif %}
+          <div class="text-xs text-ink-700 mt-2">by {{ t.doctor_name }}{% if t.cost %} · ${{ '%.2f'|format(t.cost) }}{% endif %}</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card p-6 mt-4 text-sm text-ink-700">No treatment notes yet — they'll appear here after your first visit.</div>
+  {% endif %}
+</section>
+{% endblock %}

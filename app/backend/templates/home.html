@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="max-w-7xl mx-auto px-6 pt-12 pb-16 grid lg:grid-cols-2 gap-12 items-center">
+  <div>
+    <span class="badge badge-completed" data-testid="home-eyebrow"><span class="w-1.5 h-1.5 rounded-full bg-mint-600"></span> Accepting new patients</span>
+    <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl leading-[0.95] mt-5" data-testid="home-hero-title">
+      A calmer<br/><span class="italic text-mint-700">dental visit</span><br/>starts here.
+    </h1>
+    <p class="mt-6 text-lg text-ink-700 max-w-md">
+      Book a visit with <b>{{ doctor_name }}</b> in less than a minute. Transparent care,
+      gentle hands, and a full digital record of every appointment.
+    </p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <a href="/api/register" class="btn-primary" data-testid="home-cta-book">Book your first visit →</a>
+      <a href="/api/about" class="btn-outline" data-testid="home-cta-meet">Meet Dr. Khan</a>
+    </div>
+    <div class="mt-10 flex items-center gap-6 text-sm text-ink-700">
+      <div><div class="font-display text-3xl text-ink-900">3+</div>years experience</div>
+      <div class="h-8 w-px bg-[#DFE1D8]"></div>
+      <div><div class="font-display text-3xl text-ink-900">15min</div>average wait</div>
+    </div>
+  </div>
+  <div class="relative">
+    <div class="card p-8 relative overflow-hidden">
+      <div class="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-mint-100 blur-3xl"></div>
+      <div class="relative">
+        <div class="text-xs uppercase tracking-[0.2em] text-mint-700 font-semibold">Today at Smile Care</div>
+        <h3 class="font-display text-3xl mt-2">Book in 3 quick steps</h3>
+        <ol class="mt-6 space-y-4">
+          <li class="flex gap-4"><span class="w-8 h-8 rounded-[2px] bg-ink-900 text-cream flex items-center justify-center font-display">1</span><div><div class="font-semibold">Create your account</div><div class="text-sm text-ink-700">Just your name, email &amp; phone.</div></div></li>
+          <li class="flex gap-4"><span class="w-8 h-8 rounded-[2px] bg-ink-900 text-cream flex items-center justify-center font-display">2</span><div><div class="font-semibold">Pick a date &amp; time</div><div class="text-sm text-ink-700">Live availability, no waiting for calls.</div></div></li>
+          <li class="flex gap-4"><span class="w-8 h-8 rounded-[2px] bg-ink-900 text-cream flex items-center justify-center font-display">3</span><div><div class="font-semibold">Arrive &amp; smile</div><div class="text-sm text-ink-700">Your record travels with you across visits.</div></div></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-6 py-16 border-t border-[#DFE1D8]">
+  <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
+    <h2 class="font-display text-4xl">What we <span class="italic text-mint-700">care about</span></h2>
+    <a href="/api/about" class="link-underline text-sm font-semibold">More about the practice →</a>
+  </div>
+  <div class="grid md:grid-cols-3 gap-5">
+    <div class="card p-7 hover:-translate-y-1 transition-transform">
+      <div class="w-12 h-12 rounded-[2px] bg-mint-50 flex items-center justify-center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-mint-700">
+          <path d="M12 21c-1.5 0-2-4-3.5-4S6 21 5 21c-1.5 0-2-2-2-5 0-6 2-9 4.5-9 1.2 0 2 .6 2.5 1 .5-.4 1.3-1 2.5-1 1.2 0 2 .6 2.5 1 .5-.4 1.3-1 2.5-1C20 7 21 10 21 16c0 3-.5 5-2 5-1 0-1.5-4-3.5-4s-2 4-3.5 4z"/>
+        </svg>
+      </div>
+      <h3 class="font-display text-2xl mt-4">General &amp; Preventive</h3>
+      <p class="text-ink-700 mt-2 text-sm leading-relaxed">Cleanings, check-ups, sealants and honest advice — never up-sold, always explained.</p>
+    </div>
+    <div class="card p-7 hover:-translate-y-1 transition-transform">
+      <div class="w-12 h-12 rounded-[2px] bg-mint-50 flex items-center justify-center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-mint-700">
+          <path d="M12 3v6M12 15v6M3 12h6M15 12h6M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3"/>
+        </svg>
+      </div>
+      <h3 class="font-display text-2xl mt-4">Cosmetic Dentistry</h3>
+      <p class="text-ink-700 mt-2 text-sm leading-relaxed">Whitening, veneers and clear aligners tailored to how you actually smile.</p>
+    </div>
+    <div class="card p-7 hover:-translate-y-1 transition-transform">
+      <div class="w-12 h-12 rounded-[2px] bg-mint-50 flex items-center justify-center">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-mint-700">
+          <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+      </div>
+      <h3 class="font-display text-2xl mt-4">Restorative Care</h3>
+      <p class="text-ink-700 mt-2 text-sm leading-relaxed">Fillings, crowns and gentle root canals with modern, minimally-invasive tools.</p>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-7xl mx-auto px-6 pb-20">
+  <div class="card p-10 md:p-14 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-mint-50 to-transparent"></div>
+    <div class="relative grid md:grid-cols-[2fr,1fr] gap-8 items-center">
+      <div>
+        <h2 class="font-display text-4xl">Your smile,<br/>on your schedule.</h2>
+        <p class="mt-3 text-ink-700 max-w-lg">Real-time slots, digital records, gentle reminders. Everything a modern clinic should be — nothing it shouldn't.</p>
+      </div>
+      <div class="flex md:justify-end">
+        {% if user and user.role == 'patient' %}
+          <a href="/api/book" class="btn-primary" data-testid="home-cta-secondary">Book a visit →</a>
+        {% elif user and user.role == 'doctor' %}
+          <a href="/api/doctor" class="btn-primary" data-testid="home-cta-secondary">Open dashboard →</a>
+        {% else %}
+          <a href="/api/register" class="btn-primary" data-testid="home-cta-secondary">Create your account →</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

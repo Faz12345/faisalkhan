@@ -1,0 +1,24 @@
+
+{% extends "base.html" %}
+{% block content %}
+<section class="max-w-md mx-auto px-6 py-16">
+  <div class="card p-8">
+    <span class="text-xs uppercase tracking-[0.2em] text-mint-700 font-semibold">New patient</span>
+    <h1 class="font-display text-4xl mt-1">Create your account</h1>
+    <p class="text-sm text-ink-700 mt-2">Takes 30 seconds. You'll be able to book a visit right after.</p>
+    {% if error %}
+      <div class="mt-4 p-3 rounded-xl bg-[#F5DADA] text-[#8B2E2E] text-sm" data-testid="register-error">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/api/register" class="mt-6 space-y-4" data-testid="register-form">
+      <div><label>Full name</label><input type="text" name="name" required data-testid="register-name" /></div>
+      <div><label>Email</label><input type="email" name="email" required data-testid="register-email" /></div>
+      <div><label>Phone (optional)</label><input type="tel" name="phone" data-testid="register-phone" /></div>
+      <div><label>Password</label><input type="password" name="password" required minlength="6" data-testid="register-password" /></div>
+      <button class="btn-primary w-full" type="submit" data-testid="register-submit">Create account</button>
+    </form>
+    <p class="text-sm text-ink-700 mt-6 text-center">
+      Already have an account? <a href="/api/login" class="text-mint-700 font-semibold link-underline">Log in</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

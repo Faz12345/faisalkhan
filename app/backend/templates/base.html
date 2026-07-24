@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Smile Care Clinic — {{ doctor_name }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['"Instrument Serif"', 'serif'],
+            sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"IBM Plex Mono"', 'monospace'],
+          },
+          colors: {
+            ink:   { 900:'#12151A', 800:'#1C2027', 700:'#2B303A' },
+            mint:  { 50:'#E9F6FA', 100:'#CBEBF3', 500:'#0F8AAD', 600:'#0C7590', 700:'#0A5E75' },
+            sky:   { 50:'#F0F1EC', 100:'#DFE1D8', 500:'#54595F', 600:'#3D4147' },
+            cream: '#F4F5F2',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body{background:#F4F5F2;color:#12151A;font-family:'IBM Plex Sans',sans-serif;}
+    .font-display{font-family:'Instrument Serif',serif;letter-spacing:-0.01em;}
+    .font-mono{font-family:'IBM Plex Mono',monospace;letter-spacing:-0.01em;}
+    .btn-primary{background:#12151A;color:#fff;padding:0.75rem 1.5rem;border-radius:2px;font-weight:500;font-size:.9rem;transition:all .15s ease;}
+    .btn-primary:hover{background:#0F8AAD;}
+    .btn-outline{border:1px solid #12151A;color:#12151A;padding:0.65rem 1.25rem;border-radius:2px;font-weight:500;font-size:.9rem;transition:all .15s;}
+    .btn-outline:hover{background:#12151A;color:#fff;}
+    .card{background:#fff;border:1px solid #DFE1D8;border-radius:4px;box-shadow:none;}
+    .badge{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .6rem;border-radius:2px;font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
+    .badge-pending{background:#F5EFDD;color:#7A6220;}
+    .badge-confirmed{background:#E9F6FA;color:#0A5E75;}
+    .badge-completed{background:#E4EEE3;color:#3B5A38;}
+    .badge-cancelled{background:#F6E6E3;color:#8A3B2C;}
+    a{color:inherit;}
+    input,select,textarea{background:#fff;border:1px solid #DFE1D8;border-radius:2px;padding:.7rem .9rem;width:100%;font-size:.95rem;transition:border-color .15s;}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#0F8AAD;box-shadow:0 0 0 3px rgba(15,138,173,.12);}
+    label{display:block;font-size:.78rem;font-weight:600;color:#2B303A;margin-bottom:.35rem;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.04em;}
+    .link-underline{position:relative;}
+    .link-underline::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .3s;}
+    .link-underline:hover::after{transform:scaleX(1);transform-origin:left;}
+    .ruler{background-image:repeating-linear-gradient(90deg,#DFE1D8 0,#DFE1D8 1px,transparent 1px,transparent 12px);height:8px;}
+  </style>
+</head>
+<body class="min-h-screen">
+<nav class="border-b border-[#DFE1D8] bg-cream/90 backdrop-blur sticky top-0 z-30" data-testid="main-nav">
+  <div class="ruler"></div>
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <a href="/api/" class="flex items-center gap-2" data-testid="nav-home">
+      <span class="inline-flex w-9 h-9 rounded-[2px] bg-ink-900 items-center justify-center text-cream font-mono text-sm font-semibold">SC</span>
+      <span class="font-display text-2xl italic">Smile Care<span class="text-mint-600">.</span></span>
+    </a>
+    <div class="hidden md:flex items-center gap-8 text-sm font-medium">
+      <a href="/api/" class="link-underline">Home</a>
+      <a href="/api/about" class="link-underline">About Dr. Khan</a>
+      {% if user and user.role == 'patient' %}
+        <a href="/api/book" class="link-underline" data-testid="nav-book">Book Visit</a>
+        <a href="/api/my-appointments" class="link-underline" data-testid="nav-my-appts">My Appointments</a>
+      {% elif user and user.role == 'doctor' %}
+        <a href="/api/doctor" class="link-underline" data-testid="nav-doctor-dashboard">Dashboard</a>
+        <a href="/api/doctor/patients" class="link-underline" data-testid="nav-doctor-patients">Patients</a>
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-3">
+      {% if user %}
+        <span class="hidden sm:inline text-sm text-ink-800">Hi, <b>{{ user.name.split(' ')[0] }}</b></span>
+        <form method="post" action="/api/logout"><button class="btn-outline text-sm" data-testid="logout-btn">Logout</button></form>
+      {% else %}
+        <a href="/api/login" class="btn-outline text-sm" data-testid="nav-login">Login</a>
+        <a href="/api/register" class="btn-primary text-sm hidden sm:inline-flex" data-testid="nav-register">Book a visit</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+<main>{% block content %}{% endblock %}</main>
+<footer class="mt-24 border-t border-[#DFE1D8] bg-cream">
+  <div class="max-w-7xl mx-auto px-6 py-10 grid md:grid-cols-3 gap-8 text-sm">
+    <div>
+      <div class="font-display text-2xl">Smile Care<span class="text-mint-600">.</span></div>
+      <p class="mt-2 text-ink-700">Gentle, modern dentistry for the whole family — care led by {{ doctor_name }}.</p>
+    </div>
+    <div>
+      <div class="font-semibold mb-2">Clinic Hours</div>
+      <p class="text-ink-700">Mon–Sat • 10:30 AM – 3:00 PM<br/>Mon–Sat • 6:00 PM – 11:00 PM<br/>Sun • 10:30 AM – 2:00 PM</p>
+    </div>
+    <div>
+      <div class="font-semibold mb-2">Contact</div>
+      <p class="text-ink-700">42 Maple Street, Downtown<br/>hello@smilecareclinic.example<br/>(415) 555-0134</p>
+    </div>
+  </div>
+  <div class="text-center text-xs text-ink-700 py-4 border-t border-[#DFE1D8]">© 2026 Smile Care Clinic — {{ doctor_name }}</div>
+</footer>
+</body>
+</html>
