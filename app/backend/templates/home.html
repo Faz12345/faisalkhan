@@ -1,93 +1,126 @@
 {% extends "base.html" %}
+{% block title %}Smile Care Dental — {{ doctor_name }}{% endblock %}
 {% block content %}
-<section class="max-w-7xl mx-auto px-6 pt-12 pb-16 grid lg:grid-cols-2 gap-12 items-center">
-  <div>
-    <span class="badge badge-completed" data-testid="home-eyebrow"><span class="w-1.5 h-1.5 rounded-full bg-mint-600"></span> Accepting new patients</span>
-    <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl leading-[0.95] mt-5" data-testid="home-hero-title">
-      A calmer<br/><span class="italic text-mint-700">dental visit</span><br/>starts here.
-    </h1>
-    <p class="mt-6 text-lg text-ink-700 max-w-md">
-      Book a visit with <b>{{ doctor_name }}</b> in less than a minute. Transparent care,
-      gentle hands, and a full digital record of every appointment.
-    </p>
-    <div class="mt-8 flex flex-wrap gap-3">
-      <a href="/api/register" class="btn-primary" data-testid="home-cta-book">Book your first visit →</a>
-      <a href="/api/about" class="btn-outline" data-testid="home-cta-meet">Meet Dr. Khan</a>
+
+<!-- HERO -->
+<section class="relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-brand-50 -z-10"></div>
+  <div class="max-w-7xl mx-auto px-6 pt-16 pb-20 grid lg:grid-cols-2 gap-12 items-center">
+    <div>
+      <div class="inline-flex items-center gap-2 bg-brand-100 text-brand-700 px-3 py-1 rounded-full text-xs font-semibold mb-5">
+        <span class="w-2 h-2 bg-brand-500 rounded-full animate-pulse"></span>
+        Accepting new patients
+      </div>
+      <h1 class="font-display text-5xl sm:text-6xl font-bold leading-tight text-ink-900">
+        Your brightest<br/><span class="text-brand-600 italic">smile</span> starts<br/>here.
+      </h1>
+      <p class="mt-5 text-lg text-gray-600 max-w-md leading-relaxed">
+        Book a visit with <strong>{{ doctor_name }}</strong> (BDS) in minutes.
+        Gentle care, modern equipment, and a full digital record of every visit.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="/api/register" class="btn btn-primary px-6 py-3 text-base">Book your visit →</a>
+        <a href="/api/about" class="btn btn-outline px-6 py-3 text-base">Meet Dr. Khan</a>
+      </div>
+      <div class="mt-10 flex items-center gap-8 text-sm text-gray-600">
+        <div class="text-center">
+          <div class="font-display text-3xl font-bold text-ink-900">5+</div>
+          <div>Years experience</div>
+        </div>
+        <div class="h-10 w-px bg-gray-200"></div>
+        <div class="text-center">
+          <div class="font-display text-3xl font-bold text-ink-900">BDS</div>
+          <div>Qualified</div>
+        </div>
+        <div class="h-10 w-px bg-gray-200"></div>
+        <div class="text-center">
+          <div class="font-display text-3xl font-bold text-ink-900">2</div>
+          <div>Sessions daily</div>
+        </div>
+      </div>
     </div>
-    <div class="mt-10 flex items-center gap-6 text-sm text-ink-700">
-      <div><div class="font-display text-3xl text-ink-900">3+</div>years experience</div>
-      <div class="h-8 w-px bg-[#DFE1D8]"></div>
-      <div><div class="font-display text-3xl text-ink-900">15min</div>average wait</div>
-    </div>
-  </div>
-  <div class="relative">
-    <div class="card p-8 relative overflow-hidden">
-      <div class="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-mint-100 blur-3xl"></div>
+
+    <!-- Booking card -->
+    <div class="card p-8 shadow-xl relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-48 h-48 bg-brand-50 rounded-full -translate-y-24 translate-x-24"></div>
       <div class="relative">
-        <div class="text-xs uppercase tracking-[0.2em] text-mint-700 font-semibold">Today at Smile Care</div>
-        <h3 class="font-display text-3xl mt-2">Book in 3 quick steps</h3>
-        <ol class="mt-6 space-y-4">
-          <li class="flex gap-4"><span class="w-8 h-8 rounded-[2px] bg-ink-900 text-cream flex items-center justify-center font-display">1</span><div><div class="font-semibold">Create your account</div><div class="text-sm text-ink-700">Just your name, email &amp; phone.</div></div></li>
-          <li class="flex gap-4"><span class="w-8 h-8 rounded-[2px] bg-ink-900 text-cream flex items-center justify-center font-display">2</span><div><div class="font-semibold">Pick a date &amp; time</div><div class="text-sm text-ink-700">Live availability, no waiting for calls.</div></div></li>
-          <li class="flex gap-4"><span class="w-8 h-8 rounded-[2px] bg-ink-900 text-cream flex items-center justify-center font-display">3</span><div><div class="font-semibold">Arrive &amp; smile</div><div class="text-sm text-ink-700">Your record travels with you across visits.</div></div></li>
-        </ol>
+        <div class="text-xs font-semibold text-brand-600 uppercase tracking-widest mb-2">Book in 3 steps</div>
+        <h3 class="font-display text-2xl font-bold text-ink-900 mb-6">Simple &amp; Fast Booking</h3>
+        <div class="space-y-5">
+          <div class="flex items-start gap-4">
+            <div class="w-8 h-8 bg-ink-900 text-white rounded-lg flex items-center justify-center text-sm font-bold shrink-0">1</div>
+            <div><div class="font-semibold text-ink-900">Create your account</div><div class="text-sm text-gray-500 mt-0.5">Name, email &amp; phone — done in 30 seconds.</div></div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-8 h-8 bg-ink-900 text-white rounded-lg flex items-center justify-center text-sm font-bold shrink-0">2</div>
+            <div><div class="font-semibold text-ink-900">Pick a date &amp; slot</div><div class="text-sm text-gray-500 mt-0.5">Live availability — morning or evening sessions.</div></div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-8 h-8 bg-brand-600 text-white rounded-lg flex items-center justify-center text-sm font-bold shrink-0">3</div>
+            <div><div class="font-semibold text-ink-900">Arrive &amp; smile</div><div class="text-sm text-gray-500 mt-0.5">Your records are always with you across visits.</div></div>
+          </div>
+        </div>
+        <div class="mt-7 p-4 bg-brand-50 rounded-lg text-sm text-brand-700 font-medium">
+          🕐 Morning: <b>10:00 AM – 2:00 PM</b> &nbsp;|&nbsp; 🌙 Evening: <b>5:00 PM – 11:00 PM</b>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="max-w-7xl mx-auto px-6 py-16 border-t border-[#DFE1D8]">
-  <div class="flex items-end justify-between mb-10 flex-wrap gap-4">
-    <h2 class="font-display text-4xl">What we <span class="italic text-mint-700">care about</span></h2>
-    <a href="/api/about" class="link-underline text-sm font-semibold">More about the practice →</a>
+<!-- SERVICES -->
+<section class="max-w-7xl mx-auto px-6 py-16">
+  <div class="text-center mb-12">
+    <div class="text-xs font-semibold text-brand-600 uppercase tracking-widest mb-2">Our services</div>
+    <h2 class="font-display text-4xl font-bold text-ink-900">What we <span class="italic text-brand-600">treat</span></h2>
   </div>
-  <div class="grid md:grid-cols-3 gap-5">
-    <div class="card p-7 hover:-translate-y-1 transition-transform">
-      <div class="w-12 h-12 rounded-[2px] bg-mint-50 flex items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-mint-700">
-          <path d="M12 21c-1.5 0-2-4-3.5-4S6 21 5 21c-1.5 0-2-2-2-5 0-6 2-9 4.5-9 1.2 0 2 .6 2.5 1 .5-.4 1.3-1 2.5-1 1.2 0 2 .6 2.5 1 .5-.4 1.3-1 2.5-1C20 7 21 10 21 16c0 3-.5 5-2 5-1 0-1.5-4-3.5-4s-2 4-3.5 4z"/>
-        </svg>
-      </div>
-      <h3 class="font-display text-2xl mt-4">General &amp; Preventive</h3>
-      <p class="text-ink-700 mt-2 text-sm leading-relaxed">Cleanings, check-ups, sealants and honest advice — never up-sold, always explained.</p>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% set services = [
+      ('🦷','General & Preventive','Cleanings, check-ups, sealants, and honest advice — never up-sold.'),
+      ('✨','Cosmetic Dentistry','Whitening, veneers, and aligners tailored to how you actually smile.'),
+      ('🔧','Restorative Care','Fillings, crowns and root canals with minimal-invasive techniques.'),
+      ('👶','Pediatric Dentistry','Gentle, friendly care designed especially for children.'),
+      ('🦴','Oral Surgery','Extractions and surgical procedures in a calm, safe environment.'),
+      ('📋','Treatment Planning','Detailed digital records and transparent treatment plans every visit.'),
+    ] %}
+    {% for icon, title, desc in services %}
+    <div class="card p-7 hover:shadow-md hover:-translate-y-1 transition-all duration-200">
+      <div class="text-3xl mb-4">{{ icon }}</div>
+      <h3 class="font-display text-xl font-bold text-ink-900 mb-2">{{ title }}</h3>
+      <p class="text-gray-500 text-sm leading-relaxed">{{ desc }}</p>
     </div>
-    <div class="card p-7 hover:-translate-y-1 transition-transform">
-      <div class="w-12 h-12 rounded-[2px] bg-mint-50 flex items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-mint-700">
-          <path d="M12 3v6M12 15v6M3 12h6M15 12h6M6 6l3 3M15 15l3 3M18 6l-3 3M9 15l-3 3"/>
-        </svg>
-      </div>
-      <h3 class="font-display text-2xl mt-4">Cosmetic Dentistry</h3>
-      <p class="text-ink-700 mt-2 text-sm leading-relaxed">Whitening, veneers and clear aligners tailored to how you actually smile.</p>
-    </div>
-    <div class="card p-7 hover:-translate-y-1 transition-transform">
-      <div class="w-12 h-12 rounded-[2px] bg-mint-50 flex items-center justify-center">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-mint-700">
-          <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/>
-          <path d="M9 12l2 2 4-4"/>
-        </svg>
-      </div>
-      <h3 class="font-display text-2xl mt-4">Restorative Care</h3>
-      <p class="text-ink-700 mt-2 text-sm leading-relaxed">Fillings, crowns and gentle root canals with modern, minimally-invasive tools.</p>
-    </div>
+    {% endfor %}
   </div>
 </section>
 
+<!-- CTA BANNER -->
 <section class="max-w-7xl mx-auto px-6 pb-20">
-  <div class="card p-10 md:p-14 relative overflow-hidden">
-    <div class="absolute inset-0 bg-gradient-to-br from-mint-50 to-transparent"></div>
+  <div class="bg-ink-900 rounded-2xl p-10 md:p-14 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-brand-700/20 to-transparent"></div>
     <div class="relative grid md:grid-cols-[2fr,1fr] gap-8 items-center">
       <div>
-        <h2 class="font-display text-4xl">Your smile,<br/>on your schedule.</h2>
-        <p class="mt-3 text-ink-700 max-w-lg">Real-time slots, digital records, gentle reminders. Everything a modern clinic should be — nothing it shouldn't.</p>
+        <h2 class="font-display text-4xl font-bold text-white leading-tight">Your smile,<br/>on your schedule.</h2>
+        <p class="mt-3 text-gray-400 max-w-lg">Real-time slots, digital records, instant confirmations. Everything a modern clinic should be.</p>
+        <div class="mt-5 flex flex-wrap gap-3">
+          <a href="https://wa.me/918767308819" target="_blank"
+             class="flex items-center gap-2 bg-[#25D366] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity">
+            <svg viewBox="0 0 24 24" fill="white" class="w-4 h-4"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            Chat on WhatsApp
+          </a>
+          <a href="mailto:shehzadkhan0101@gmail.com"
+             class="flex items-center gap-2 bg-[#EA4335] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity">
+            <svg viewBox="0 0 24 24" fill="white" class="w-4 h-4"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 010 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.910 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/></svg>
+            Send Email
+          </a>
+        </div>
       </div>
       <div class="flex md:justify-end">
         {% if user and user.role == 'patient' %}
-          <a href="/api/book" class="btn-primary" data-testid="home-cta-secondary">Book a visit →</a>
+          <a href="/api/book" class="btn btn-primary px-8 py-3 text-base" style="background:#1aaa8c;">Book a visit →</a>
         {% elif user and user.role == 'doctor' %}
-          <a href="/api/doctor" class="btn-primary" data-testid="home-cta-secondary">Open dashboard →</a>
+          <a href="/api/doctor" class="btn px-8 py-3 text-base text-white" style="background:#1aaa8c;">Dashboard →</a>
         {% else %}
-          <a href="/api/register" class="btn-primary" data-testid="home-cta-secondary">Create your account →</a>
+          <a href="/api/register" class="btn px-8 py-3 text-base text-white" style="background:#1aaa8c;">Get started →</a>
         {% endif %}
       </div>
     </div>

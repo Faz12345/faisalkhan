@@ -1,61 +1,186 @@
 {% extends "base.html" %}
+{% block title %}{{ patient.name }} — Patient Record{% endblock %}
 {% block content %}
-<section class="max-w-6xl mx-auto px-6 py-12">
-  <a href="/api/doctor/patients" class="text-sm link-underline text-ink-700">← Back to patients</a>
+<section class="max-w-6xl mx-auto px-4 sm:px-6 py-12">
+  <a href="/api/doctor/patients" class="text-sm text-gray-500 hover:text-ink-900 transition-colors">← Back to patients</a>
 
-  <div class="mt-4 grid md:grid-cols-[1fr,2fr] gap-8">
-    <div class="card p-6 h-fit">
-      <div class="w-20 h-20 rounded-full bg-mint-100 flex items-center justify-center font-display text-3xl text-mint-700" data-testid="patient-avatar">{{ patient.name[:1] }}</div>
-      <h1 class="font-display text-3xl mt-4" data-testid="patient-name">{{ patient.name }}</h1>
-      <div class="text-sm text-ink-700 mt-2">{{ patient.email }}</div>
-      {% if patient.phone %}<div class="text-sm text-ink-700">{{ patient.phone }}</div>{% endif %}
-      <div class="mt-6 grid grid-cols-2 gap-3">
-        <div class="text-center"><div class="font-display text-3xl">{{ treatments|length }}</div><div class="text-xs uppercase tracking-wider text-ink-700">Records</div>
-        <div class="text-center"><div class="font-display text-3xl">{{ appointments|length }}</div><div class="text-xs uppercase tracking-wider text-ink-700">Visits</div>
+  <!-- Profile card -->
+  <div class="card p-6 sm:p-8 mt-4">
+    <div class="flex flex-wrap items-start gap-6">
+      <div class="w-20 h-20 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-display text-4xl font-bold shrink-0">{{ patient.name[:1] }}</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-start justify-between flex-wrap gap-3">
+          <div>
+            <h1 class="font-display text-4xl font-bold text-ink-900">{{ patient.name }}</h1>
+            <div class="text-sm text-gray-500 mt-1">{{ patient.email }}</div>
+            {% if patient.phone %}<div class="text-sm text-gray-500">{{ patient.phone }}</div>{% endif %}
+          </div>
+          <a href="/api/doctor/book?patient_id={{ patient.id }}" class="btn btn-primary shrink-0">+ Book Appointment</a>
+        </div>
       </div>
-
-    <div>
-      <h2 class="font-display text-2xl">Add a treatment note</h2>
-      <form method="post" action="/api/doctor/patient/{{ patient.id }}/notes" class="card p-6 mt-3 grid sm:grid-cols-2 gap-4" data-testid="treatment-form">
-        <div><label>Diagnosis</label><input type="text" name="diagnosis" required data-testid="tn-diagnosis" /></div>
-        <div><label>Treatment given</label><input type="text" name="treatment" required data-testid="tn-treatment" /></div>
-        <div class="sm:col-span-2"><label>Notes</label><textarea name="notes" rows="3" data-testid="tn-notes"></textarea></div>
-        <div><label>Cost (USD)</label><input type="number" name="cost" step="0.01" min="0" value="0" data-testid="tn-cost" /></div>
-        <div class="sm:col-span-2 flex justify-end"><button type="submit" class="btn-primary" data-testid="tn-submit">Save record</button></div>
-      </form>
-
-      <h2 class="font-display text-2xl mt-10">Appointments</h2>
-      {% if appointments %}
-        <div class="mt-3 space-y-3">
-          {% for a in appointments %}
-            <div class="card p-4 flex items-center justify-between flex-wrap gap-3" data-testid="p-appt-{{ a.id }}">
-              <div>
-                <div class="font-semibold">{{ a.date }} · {{ a.time_slot }}</div>
-                <div class="text-sm text-ink-700">{{ a.reason }}</div>
-              <span class="badge badge-{{ a.status }}">{{ a.status }}</span>
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="card p-4 mt-3 text-sm text-ink-700">No appointments booked yet.</div>
-      {% endif %}
-
-      <h2 class="font-display text-2xl mt-10">Treatment history</h2>
-      {% if treatments %}
-        <div class="mt-3 space-y-3">
-          {% for t in treatments %}
-            <div class="card p-5" data-testid="p-treatment-{{ t.id }}">
-              <div class="flex items-center justify-between flex-wrap gap-2">
-                <div class="font-display text-lg">{{ t.diagnosis }}</div>
-                <div class="text-xs text-ink-700 uppercase tracking-wider">{{ t.date }}</div>
-              <div class="text-sm text-ink-700 mt-1"><b class="text-ink-900">Treatment:</b> {{ t.treatment }}</div>
-              {% if t.notes %}<div class="text-sm text-ink-700 mt-1"><b class="text-ink-900">Notes:</b> {{ t.notes }}</div>{% endif %}
-              <div class="text-xs text-ink-700 mt-2">{{ t.doctor_name }}{% if t.cost %} · ${{ '%.2f'|format(t.cost) }}{% endif %}</div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="card p-4 mt-3 text-sm text-ink-700">No treatment records yet.</div>
-      {% endif %}
     </div>
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-5 border-t border-gray-100">
+      <div class="text-center">
+        <div class="font-display text-3xl font-bold text-ink-900">{{ appointments|length }}</div>
+        <div class="text-xs text-gray-400 uppercase tracking-wider mt-1">Total Visits</div>
+      </div>
+      <div class="text-center">
+        <div class="font-display text-3xl font-bold text-ink-900">{{ treatments|length }}</div>
+        <div class="text-xs text-gray-400 uppercase tracking-wider mt-1">Treatments</div>
+      </div>
+      <div class="text-center">
+        <div class="font-display text-3xl font-bold text-ink-900">₹{{ '%.0f'|format(total_spent) }}</div>
+        <div class="text-xs text-gray-400 uppercase tracking-wider mt-1">Total Spent</div>
+      </div>
+      <div class="text-center">
+        <div class="font-display text-3xl font-bold text-ink-900">
+          {% set active_count = appointments | selectattr('status', 'in', ['pending','confirmed']) | list | length %}
+          {{ active_count }}
+        </div>
+        <div class="text-xs text-gray-400 uppercase tracking-wider mt-1">Active</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex border-b border-gray-200 mt-8 gap-0">
+    <button onclick="switchTab('appointments')" data-tab="appointments"
+      class="tab-btn px-6 py-3 text-sm font-semibold border-b-2 border-ink-900 text-ink-900 transition-colors">
+      Appointments
+    </button>
+    <button onclick="switchTab('treatments')" data-tab="treatments"
+      class="tab-btn px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-ink-900 transition-colors">
+      Treatment History
+    </button>
+    <button onclick="switchTab('add-record')" data-tab="add-record"
+      class="tab-btn px-6 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-500 hover:text-ink-900 transition-colors">
+      + Add Record
+    </button>
+  </div>
+
+  <!-- Tab: Appointments -->
+  <div id="tab-appointments" class="tab-content mt-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-display text-2xl font-bold text-ink-900">Appointments</h2>
+      <a href="/api/doctor/book?patient_id={{ patient.id }}" class="btn btn-outline text-xs">+ Book New</a>
+    </div>
+    {% if appointments %}
+      <div class="space-y-3">
+        {% for a in appointments %}
+          <div class="card p-5">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+              <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-xl bg-brand-50 border border-brand-100 flex flex-col items-center justify-center shrink-0">
+                  <div class="text-xs font-mono text-brand-600 font-semibold">{{ a.date[-5:] }}</div>
+                  <div class="font-mono font-bold text-ink-900 text-sm mt-0.5">{{ a.time_slot }}</div>
+                </div>
+                <div>
+                  <div class="font-semibold text-ink-900">{{ a.reason }}</div>
+                  <div class="text-xs text-gray-400 mt-0.5">{{ a.date }}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 flex-wrap">
+                <span class="badge badge-{{ a.status }}">{{ a.status }}</span>
+                <form method="post" action="/api/doctor/appointment/{{ a.id }}/status" class="flex gap-1 items-center">
+                  <select name="new_status" class="!py-1 !px-2 text-xs w-auto">
+                    {% for s in ['pending','confirmed','completed','cancelled'] %}
+                      <option value="{{ s }}" {% if s == a.status %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="btn btn-outline !py-1 !px-2 text-xs">Update</button>
+                </form>
+                <form method="post" action="/api/doctor/patient/{{ patient.id }}/delete-appointment/{{ a.id }}"
+                      onsubmit="return confirm('Delete this appointment?')">
+                  <button class="btn btn-danger !py-1 !px-2 text-xs">Delete</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card p-8 text-center">
+        <p class="text-gray-500">No appointments yet.</p>
+        <a href="/api/doctor/book?patient_id={{ patient.id }}" class="btn btn-primary mt-4 inline-block">Book first appointment</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Tab: Treatment History -->
+  <div id="tab-treatments" class="tab-content mt-6 hidden">
+    <h2 class="font-display text-2xl font-bold text-ink-900 mb-4">Treatment History</h2>
+    {% if treatments %}
+      <div class="card overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 border-b border-gray-200 text-left">
+            <tr>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Diagnosis</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Treatment</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase hidden md:table-cell">Notes</th>
+              <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Cost</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            {% for t in treatments %}
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-5 py-4 font-mono text-xs text-gray-500 whitespace-nowrap">{{ t.date }}</td>
+                <td class="px-5 py-4 font-semibold text-ink-900">{{ t.diagnosis }}</td>
+                <td class="px-5 py-4 text-gray-600">{{ t.treatment }}</td>
+                <td class="px-5 py-4 text-gray-500 hidden md:table-cell max-w-xs truncate">{{ t.notes or '—' }}</td>
+                <td class="px-5 py-4 text-right font-mono">{% if t.cost %}₹{{ '%.2f'|format(t.cost) }}{% else %}—{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-3 text-right text-sm font-semibold text-ink-900">Total: ₹{{ '%.2f'|format(total_spent) }}</div>
+    {% else %}
+      <div class="card p-8 text-center text-gray-500">No treatment records yet.</div>
+    {% endif %}
+  </div>
+
+  <!-- Tab: Add Record -->
+  <div id="tab-add-record" class="tab-content mt-6 hidden">
+    <h2 class="font-display text-2xl font-bold text-ink-900 mb-4">Add Treatment Record</h2>
+    <form method="post" action="/api/doctor/patient/{{ patient.id }}/notes" class="card p-6 grid sm:grid-cols-2 gap-4">
+      <div>
+        <label>Diagnosis</label>
+        <input type="text" name="diagnosis" required placeholder="e.g. Gingivitis, Cavity #14"/>
+      </div>
+      <div>
+        <label>Treatment given</label>
+        <input type="text" name="treatment" required placeholder="e.g. Scaling, Filling"/>
+      </div>
+      <div class="sm:col-span-2">
+        <label>Notes</label>
+        <textarea name="notes" rows="3" placeholder="Additional observations, follow-up instructions…"></textarea>
+      </div>
+      <div>
+        <label>Cost (₹)</label>
+        <input type="number" name="cost" step="0.01" min="0" value="0"/>
+      </div>
+      <div class="sm:col-span-2 flex justify-end gap-3">
+        <button type="button" class="btn btn-outline" onclick="switchTab('treatments')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Record</button>
+      </div>
+    </form>
+  </div>
 </section>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+  const target = document.getElementById('tab-' + tab);
+  if (target) target.classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const isActive = btn.dataset.tab === tab;
+    btn.classList.toggle('border-ink-900', isActive);
+    btn.classList.toggle('text-ink-900', isActive);
+    btn.classList.toggle('border-transparent', !isActive);
+    btn.classList.toggle('text-gray-500', !isActive);
+  });
+}
+</script>
 {% endblock %}

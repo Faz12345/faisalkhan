@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Doctor Login — Smile Care Dental</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0f1117 0%,#0e6d59 100%);min-height:100vh;}
+    input{background:#fff;border:1.5px solid #d1d5db;border-radius:6px;padding:.65rem .9rem;width:100%;font-size:.9rem;outline:none;transition:border-color .15s;}
+    input:focus{border-color:#1aaa8c;box-shadow:0 0 0 3px rgba(26,170,140,.2);}
+    label{display:block;font-size:.78rem;font-weight:600;color:#e5e7eb;margin-bottom:.3rem;}
+    .font-display{font-family:'Playfair Display',serif;}
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen px-4 py-10">
+  <div class="w-full max-w-md">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex w-16 h-16 rounded-2xl bg-white/10 backdrop-blur items-center justify-center mb-4">
+        <svg viewBox="0 0 24 24" fill="white" class="w-8 h-8"><path d="M12 2C8 2 5 5.5 5 9c0 2 .6 3.8 1.6 5.2L5 21l3-1.5 2 1 2-1 2 1 2-1.5L14.4 14.2C15.4 12.8 16 11 16 9c0-3.5-3-7-4-7z"/></svg>
+      </div>
+      <h1 class="font-display text-3xl font-bold text-white">Doctor Portal</h1>
+      <p class="text-white/60 mt-1 text-sm">Smile Care Dental Clinic — Restricted Access</p>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-8">
+      <!-- Doctor info badge -->
+      <div class="flex items-center gap-3 bg-white/10 rounded-xl p-4 mb-6">
+        <div class="w-12 h-12 rounded-full bg-brand-600 flex items-center justify-center shrink-0" style="background:#1aaa8c;">
+          <span class="text-white font-bold text-lg">SK</span>
+        </div>
+        <div>
+          <div class="text-white font-semibold">Dr. Shehzad Khan</div>
+          <div class="text-white/60 text-xs">BDS • Dental Surgeon</div>
+          <div class="text-white/60 text-xs mt-0.5">+91 87673 08819</div>
+        </div>
+      </div>
+
+      {% if error %}
+        <div class="mb-5 bg-red-900/40 border border-red-500/40 text-red-200 rounded-lg px-4 py-3 text-sm">
+          ⚠️ {{ error }}
+        </div>
+      {% endif %}
+
+      <!-- Login credentials hint -->
+      <div class="mb-5 bg-white/5 border border-white/10 rounded-xl p-4 cursor-pointer hover:bg-white/10 transition-colors"
+           onclick="document.querySelector('[name=email]').value='shehzadkhan0101@gmail.com';document.querySelector('[name=password]').value='doctor123'"
+           title="Click to auto-fill">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-white/70 text-xs font-semibold uppercase tracking-wider">Login Credentials</span>
+          <span class="text-white/40 text-xs bg-white/10 px-2 py-0.5 rounded-full">click to fill</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <div class="text-white/40 mb-0.5">Email</div>
+            <div class="text-white font-mono bg-black/20 rounded px-2 py-1 truncate">shehzadkhan0101@gmail.com</div>
+          </div>
+          <div>
+            <div class="text-white/40 mb-0.5">Password</div>
+            <div class="text-white font-mono bg-black/20 rounded px-2 py-1">doctor123</div>
+          </div>
+        </div>
+      </div>
+
+      <form method="post" action="/api/doctor-login" class="space-y-5">
+        <div>
+          <label>Doctor Email</label>
+          <input type="email" name="email" required placeholder="shehzadkhan0101@gmail.com" autocomplete="username"/>
+        </div>
+        <div>
+          <label>Password</label>
+          <input type="password" name="password" required placeholder="••••••••" autocomplete="current-password"/>
+        </div>
+        <button type="submit"
+          class="w-full py-3 rounded-lg font-semibold text-white transition-all"
+          style="background:#1aaa8c;"
+          onmouseover="this.style.background='#0e6d59'"
+          onmouseout="this.style.background='#1aaa8c'">
+          Access Dashboard →
+        </button>
+      </form>
+
+      <div class="mt-6 pt-5 border-t border-white/10 text-center space-y-2">
+        <div class="text-white/50 text-xs">This portal is for the treating doctor only.</div>
+        <a href="/api/" class="text-white/60 text-sm hover:text-white transition-colors">← Back to clinic home</a>
+      </div>
+    </div>
+
+    <!-- Contact row -->
+    <div class="mt-6 flex items-center justify-center gap-4">
+      <a href="https://wa.me/918767308819" target="_blank"
+         class="flex items-center gap-2 bg-[#25D366] text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+        <svg viewBox="0 0 24 24" fill="white" class="w-4 h-4"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        WhatsApp
+      </a>
+      <a href="mailto:shehzadkhan0101@gmail.com"
+         class="flex items-center gap-2 bg-[#EA4335] text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+        <svg viewBox="0 0 24 24" fill="white" class="w-4 h-4"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 010 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.910 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/></svg>
+        Gmail
+      </a>
+    </div>
+  </div>
+</body>
+</html>

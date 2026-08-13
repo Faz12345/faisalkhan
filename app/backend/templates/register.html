@@ -1,24 +1,42 @@
-
 {% extends "base.html" %}
+{% block title %}Create Account — Smile Care Dental{% endblock %}
 {% block content %}
-<section class="max-w-md mx-auto px-6 py-16">
-  <div class="card p-8">
-    <span class="text-xs uppercase tracking-[0.2em] text-mint-700 font-semibold">New patient</span>
-    <h1 class="font-display text-4xl mt-1">Create your account</h1>
-    <p class="text-sm text-ink-700 mt-2">Takes 30 seconds. You'll be able to book a visit right after.</p>
-    {% if error %}
-      <div class="mt-4 p-3 rounded-xl bg-[#F5DADA] text-[#8B2E2E] text-sm" data-testid="register-error">{{ error }}</div>
-    {% endif %}
-    <form method="post" action="/api/register" class="mt-6 space-y-4" data-testid="register-form">
-      <div><label>Full name</label><input type="text" name="name" required data-testid="register-name" /></div>
-      <div><label>Email</label><input type="email" name="email" required data-testid="register-email" /></div>
-      <div><label>Phone (optional)</label><input type="tel" name="phone" data-testid="register-phone" /></div>
-      <div><label>Password</label><input type="password" name="password" required minlength="6" data-testid="register-password" /></div>
-      <button class="btn-primary w-full" type="submit" data-testid="register-submit">Create account</button>
-    </form>
-    <p class="text-sm text-ink-700 mt-6 text-center">
-      Already have an account? <a href="/api/login" class="text-mint-700 font-semibold link-underline">Log in</a>
-    </p>
+<section class="min-h-[80vh] flex items-center justify-center px-4 py-12">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-8">
+      <div class="text-xs font-semibold text-brand-600 uppercase tracking-widest mb-2">New patient</div>
+      <h1 class="font-display text-4xl font-bold text-ink-900">Create your account</h1>
+      <p class="text-gray-500 mt-2 text-sm">Takes 30 seconds. Book your first visit right after.</p>
+    </div>
+    <div class="card p-8 shadow-lg">
+      {% if error %}
+        <div class="mb-5 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm flex items-start gap-2">
+          <span class="mt-0.5">⚠️</span><span>{{ error }}</span>
+        </div>
+      {% endif %}
+      <form method="post" action="/api/register" class="space-y-5">
+        <div>
+          <label>Full name</label>
+          <input type="text" name="name" required placeholder="Your full name" autocomplete="name"/>
+        </div>
+        <div>
+          <label>Email address</label>
+          <input type="email" name="email" required placeholder="you@example.com" autocomplete="email"/>
+        </div>
+        <div>
+          <label>Phone number <span class="text-gray-400 font-normal">(optional)</span></label>
+          <input type="tel" name="phone" placeholder="+91 98765 43210" autocomplete="tel"/>
+        </div>
+        <div>
+          <label>Password</label>
+          <input type="password" name="password" required minlength="6" placeholder="Min. 6 characters" autocomplete="new-password"/>
+        </div>
+        <button type="submit" class="btn btn-primary w-full py-3">Create account →</button>
+      </form>
+      <div class="mt-6 pt-5 border-t text-center text-sm text-gray-500">
+        Already have an account? <a href="/api/login" class="text-brand-600 font-semibold hover:text-brand-700">Log in</a>
+      </div>
+    </div>
   </div>
 </section>
 {% endblock %}

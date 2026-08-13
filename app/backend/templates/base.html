@@ -3,101 +3,164 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{% block title %}Smile Care Clinic — {{ doctor_name }}{% endblock %}</title>
+  <title>{% block title %}Smile Care Dental — {{ doctor_name }}{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
-            display: ['"Instrument Serif"', 'serif'],
-            sans: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
-            mono: ['"IBM Plex Mono"', 'monospace'],
+            display: ['"Playfair Display"','Georgia','serif'],
+            sans: ['Inter','system-ui','sans-serif'],
           },
           colors: {
-            ink:   { 900:'#12151A', 800:'#1C2027', 700:'#2B303A' },
-            mint:  { 50:'#E9F6FA', 100:'#CBEBF3', 500:'#0F8AAD', 600:'#0C7590', 700:'#0A5E75' },
-            sky:   { 50:'#F0F1EC', 100:'#DFE1D8', 500:'#54595F', 600:'#3D4147' },
-            cream: '#F4F5F2',
+            brand: { 50:'#eef9f6', 100:'#d0f0e8', 200:'#a4dfd0', 500:'#1aaa8c', 600:'#138a71', 700:'#0e6d59' },
+            ink:   { 900:'#0f1117', 800:'#1c2030', 700:'#374151' },
+            cream: '#f8f9f6',
           }
         }
       }
     }
   </script>
   <style>
-    body{background:#F4F5F2;color:#12151A;font-family:'IBM Plex Sans',sans-serif;}
-    .font-display{font-family:'Instrument Serif',serif;letter-spacing:-0.01em;}
-    .font-mono{font-family:'IBM Plex Mono',monospace;letter-spacing:-0.01em;}
-    .btn-primary{background:#12151A;color:#fff;padding:0.75rem 1.5rem;border-radius:2px;font-weight:500;font-size:.9rem;transition:all .15s ease;}
-    .btn-primary:hover{background:#0F8AAD;}
-    .btn-outline{border:1px solid #12151A;color:#12151A;padding:0.65rem 1.25rem;border-radius:2px;font-weight:500;font-size:.9rem;transition:all .15s;}
-    .btn-outline:hover{background:#12151A;color:#fff;}
-    .card{background:#fff;border:1px solid #DFE1D8;border-radius:4px;box-shadow:none;}
-    .badge{display:inline-flex;align-items:center;gap:.35rem;padding:.2rem .6rem;border-radius:2px;font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;}
-    .badge-pending{background:#F5EFDD;color:#7A6220;}
-    .badge-confirmed{background:#E9F6FA;color:#0A5E75;}
-    .badge-completed{background:#E4EEE3;color:#3B5A38;}
-    .badge-cancelled{background:#F6E6E3;color:#8A3B2C;}
-    a{color:inherit;}
-    input,select,textarea{background:#fff;border:1px solid #DFE1D8;border-radius:2px;padding:.7rem .9rem;width:100%;font-size:.95rem;transition:border-color .15s;}
-    input:focus,select:focus,textarea:focus{outline:none;border-color:#0F8AAD;box-shadow:0 0 0 3px rgba(15,138,173,.12);}
-    label{display:block;font-size:.78rem;font-weight:600;color:#2B303A;margin-bottom:.35rem;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.04em;}
-    .link-underline{position:relative;}
-    .link-underline::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .3s;}
-    .link-underline:hover::after{transform:scaleX(1);transform-origin:left;}
-    .ruler{background-image:repeating-linear-gradient(90deg,#DFE1D8 0,#DFE1D8 1px,transparent 1px,transparent 12px);height:8px;}
+    *{box-sizing:border-box;}
+    body{background:#f8f9f6;color:#0f1117;font-family:'Inter',sans-serif;min-height:100vh;}
+    .font-display{font-family:'Playfair Display',serif;}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.65rem 1.4rem;border-radius:6px;font-weight:600;font-size:.875rem;transition:all .18s ease;cursor:pointer;border:none;text-decoration:none;}
+    .btn-primary{background:#0f1117;color:#fff;}
+    .btn-primary:hover{background:#138a71;}
+    .btn-outline{background:transparent;color:#0f1117;border:1.5px solid #d1d5db;}
+    .btn-outline:hover{background:#0f1117;color:#fff;border-color:#0f1117;}
+    .btn-danger{background:#fee2e2;color:#991b1b;border:1.5px solid #fca5a5;}
+    .btn-danger:hover{background:#991b1b;color:#fff;}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;}
+    .badge{display:inline-flex;align-items:center;padding:.2rem .65rem;border-radius:20px;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+    .badge-pending{background:#fef3c7;color:#92400e;}
+    .badge-confirmed{background:#d1fae5;color:#065f46;}
+    .badge-completed{background:#dbeafe;color:#1e40af;}
+    .badge-cancelled{background:#fee2e2;color:#991b1b;}
+    input,select,textarea{background:#fff;border:1.5px solid #d1d5db;border-radius:6px;padding:.6rem .85rem;width:100%;font-size:.9rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;}
+    input:focus,select:focus,textarea:focus{border-color:#1aaa8c;box-shadow:0 0 0 3px rgba(26,170,140,.15);}
+    label{display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:.3rem;letter-spacing:.02em;}
+    .nav-link{font-size:.875rem;font-weight:500;color:#374151;transition:color .15s;padding:.2rem 0;}
+    .nav-link:hover,.nav-link.active{color:#138a71;}
+    .ruler{height:3px;background:linear-gradient(90deg,#1aaa8c 0%,#0e6d59 50%,#1aaa8c 100%);}
   </style>
+  {% block extra_head %}{% endblock %}
 </head>
-<body class="min-h-screen">
-<nav class="border-b border-[#DFE1D8] bg-cream/90 backdrop-blur sticky top-0 z-30" data-testid="main-nav">
+<body>
+
+<!-- NAV -->
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
   <div class="ruler"></div>
-  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-    <a href="/api/" class="flex items-center gap-2" data-testid="nav-home">
-      <span class="inline-flex w-9 h-9 rounded-[2px] bg-ink-900 items-center justify-center text-cream font-mono text-sm font-semibold">SC</span>
-      <span class="font-display text-2xl italic">Smile Care<span class="text-mint-600">.</span></span>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+    <!-- Logo -->
+    <a href="/api/" class="flex items-center gap-2.5 shrink-0">
+      <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center">
+        <svg viewBox="0 0 24 24" fill="white" class="w-5 h-5"><path d="M12 2C8 2 5 5.5 5 9c0 2 .6 3.8 1.6 5.2L5 21l3-1.5 2 1 2-1 2 1 2-1.5L14.4 14.2C15.4 12.8 16 11 16 9c0-3.5-3-7-4-7z"/></svg>
+      </div>
+      <span class="font-display text-xl font-bold text-ink-900">Smile<span class="text-brand-600">Care</span></span>
     </a>
-    <div class="hidden md:flex items-center gap-8 text-sm font-medium">
-      <a href="/api/" class="link-underline">Home</a>
-      <a href="/api/about" class="link-underline">About Dr. Khan</a>
+
+    <!-- Desktop nav -->
+    <div class="hidden md:flex items-center gap-6">
+      <a href="/api/" class="nav-link">Home</a>
+      <a href="/api/about" class="nav-link">About</a>
       {% if user and user.role == 'patient' %}
-        <a href="/api/book" class="link-underline" data-testid="nav-book">Book Visit</a>
-        <a href="/api/my-appointments" class="link-underline" data-testid="nav-my-appts">My Appointments</a>
+        <a href="/api/book" class="nav-link">Book Visit</a>
+        <a href="/api/my-appointments" class="nav-link">My Appointments</a>
       {% elif user and user.role == 'doctor' %}
-        <a href="/api/doctor" class="link-underline" data-testid="nav-doctor-dashboard">Dashboard</a>
-        <a href="/api/doctor/patients" class="link-underline" data-testid="nav-doctor-patients">Patients</a>
+        <a href="/api/doctor" class="nav-link">Dashboard</a>
+        <a href="/api/doctor/patients" class="nav-link">Patients</a>
+        <a href="/api/doctor/book" class="nav-link">Book Patient</a>
       {% endif %}
     </div>
-    <div class="flex items-center gap-3">
+
+    <!-- Right actions -->
+    <div class="flex items-center gap-2.5">
+      <!-- WhatsApp icon -->
+      <a href="https://wa.me/{{ doctor_phone }}" target="_blank" title="WhatsApp Dr. Khan"
+         class="w-9 h-9 rounded-full bg-[#25D366] flex items-center justify-center hover:opacity-90 transition-opacity">
+        <svg viewBox="0 0 24 24" fill="white" class="w-4.5 h-4.5 w-5 h-5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+      </a>
+      <!-- Gmail icon -->
+      <a href="mailto:{{ doctor_email }}" title="Email Dr. Khan"
+         class="w-9 h-9 rounded-full bg-[#EA4335] flex items-center justify-center hover:opacity-90 transition-opacity">
+        <svg viewBox="0 0 24 24" fill="white" class="w-5 h-5"><path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 010 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.910 1.528-1.145C21.69 2.28 24 3.434 24 5.457z"/></svg>
+      </a>
+
       {% if user %}
-        <span class="hidden sm:inline text-sm text-ink-800">Hi, <b>{{ user.name.split(' ')[0] }}</b></span>
-        <form method="post" action="/api/logout"><button class="btn-outline text-sm" data-testid="logout-btn">Logout</button></form>
+        <span class="hidden sm:inline text-sm text-gray-600">Hi, <b>{{ user.name.split(' ')[0] }}</b></span>
+        {% if user.role == 'doctor' %}
+          <form method="post" action="/api/doctor-logout">
+            <button class="btn btn-outline text-sm">Logout</button>
+          </form>
+        {% else %}
+          <form method="post" action="/api/logout">
+            <button class="btn btn-outline text-sm">Logout</button>
+          </form>
+        {% endif %}
       {% else %}
-        <a href="/api/login" class="btn-outline text-sm" data-testid="nav-login">Login</a>
-        <a href="/api/register" class="btn-primary text-sm hidden sm:inline-flex" data-testid="nav-register">Book a visit</a>
+        <a href="/api/login" class="btn btn-outline text-sm">Patient Login</a>
+        <a href="/api/register" class="btn btn-primary text-sm hidden sm:inline-flex">Book a Visit</a>
       {% endif %}
     </div>
   </div>
 </nav>
+
 <main>{% block content %}{% endblock %}</main>
-<footer class="mt-24 border-t border-[#DFE1D8] bg-cream">
-  <div class="max-w-7xl mx-auto px-6 py-10 grid md:grid-cols-3 gap-8 text-sm">
-    <div>
-      <div class="font-display text-2xl">Smile Care<span class="text-mint-600">.</span></div>
-      <p class="mt-2 text-ink-700">Gentle, modern dentistry for the whole family — care led by {{ doctor_name }}.</p>
+
+<!-- FOOTER -->
+<footer class="mt-20 bg-ink-900 text-white">
+  <div class="max-w-7xl mx-auto px-6 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8 text-sm">
+    <div class="lg:col-span-1">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" fill="white" class="w-4 h-4"><path d="M12 2C8 2 5 5.5 5 9c0 2 .6 3.8 1.6 5.2L5 21l3-1.5 2 1 2-1 2 1 2-1.5L14.4 14.2C15.4 12.8 16 11 16 9c0-3.5-3-7-4-7z"/></svg>
+        </div>
+        <span class="font-display text-lg font-bold">Smile<span class="text-brand-400">Care</span></span>
+      </div>
+      <p class="text-gray-400 leading-relaxed">Gentle, modern dentistry by {{ doctor_name }} (BDS). Your smile is our priority.</p>
     </div>
     <div>
-      <div class="font-semibold mb-2">Clinic Hours</div>
-      <p class="text-ink-700">Mon–Sat • 10:30 AM – 3:00 PM<br/>Mon–Sat • 6:00 PM – 11:00 PM<br/>Sun • 10:30 AM – 2:00 PM</p>
+      <div class="font-semibold mb-3 text-white">Clinic Hours</div>
+      <p class="text-gray-400 leading-relaxed">Morning: 10:00 AM – 2:00 PM<br>Evening: 5:00 PM – 11:00 PM<br>Mon – Sat</p>
     </div>
     <div>
-      <div class="font-semibold mb-2">Contact</div>
-      <p class="text-ink-700">42 Maple Street, Downtown<br/>hello@smilecareclinic.example<br/>(415) 555-0134</p>
+      <div class="font-semibold mb-3 text-white">Contact</div>
+      <div class="space-y-2 text-gray-400">
+        <div class="flex items-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-brand-400"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 10.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+          <span>+91 87673 08819</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-brand-400"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>shehzadkhan0101@gmail.com</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-brand-400"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>Dental Clinic, Main Road</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="font-semibold mb-3 text-white">Quick Links</div>
+      <div class="space-y-2 text-gray-400">
+        <div><a href="/api/" class="hover:text-brand-400 transition-colors">Home</a></div>
+        <div><a href="/api/about" class="hover:text-brand-400 transition-colors">About Dr. Khan</a></div>
+        <div><a href="/api/register" class="hover:text-brand-400 transition-colors">Book Appointment</a></div>
+        <div><a href="/api/doctor-login" class="hover:text-brand-400 transition-colors">Doctor Portal</a></div>
+      </div>
     </div>
   </div>
-  <div class="text-center text-xs text-ink-700 py-4 border-t border-[#DFE1D8]">© 2026 Smile Care Clinic — {{ doctor_name }}</div>
+  <div class="border-t border-white/10 text-center py-4 text-xs text-gray-500">
+    &copy; 2026 Smile Care Dental Clinic — {{ doctor_name }} (BDS). All rights reserved.
+  </div>
 </footer>
+
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>

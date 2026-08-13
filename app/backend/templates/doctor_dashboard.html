@@ -1,158 +1,225 @@
 {% extends "base.html" %}
+{% block title %}Dashboard — Smile Care Dental{% endblock %}
 {% block content %}
-<style>
-@keyframes notif-slide{from{transform:translateY(-10px);opacity:0}to{transform:translateY(0);opacity:1}}
-.notif-bell{position:relative;cursor:pointer}
-.notif-bell .dot{position:absolute;top:-2px;right:-4px;width:10px;height:10px;background:#C43C3C;border-radius:50%;border:2px solid #fff}
-.notif-dropdown{display:none;position:absolute;top:100%;right:0;width:320px;background:#fff;border:1px solid #DFE1D8;border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,.08);z-index:50;max-height:360px;overflow-y:auto}
-.notif-dropdown.show{display:block;animation:notif-slide .2s ease}
-.notif-item{padding:.75rem 1rem;border-bottom:1px solid #F1EBDE;font-size:.85rem}
-.notif-item:last-child{border-bottom:none}
-.notif-item .notif-time{font-size:.65rem;color:#54595F;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.04em}
-.notif-item:hover{background:#F4F5F2}
-</style>
-<section class="max-w-7xl mx-auto px-6 py-12">
-  <div class="flex items-end justify-between flex-wrap gap-4">
-    <div class="flex items-center gap-4">
-      <div>
-        <span class="text-xs uppercase tracking-[0.2em] text-mint-700 font-semibold">Doctor console</span>
-        <h1 class="font-display text-5xl mt-1" data-testid="doctor-dashboard-title">Good day,<br/><span class="italic text-mint-700">Dr. Khan.</span></h1>
-      </div>
-      <!-- Notification Bell -->
-      <div class="notif-bell" id="notifBell" onclick="toggleNotif()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        <span class="dot" id="notifDot" style="{% if not notifications %}display:none{% endif %}"></span>
-        <div class="notif-dropdown" id="notifDropdown">
-          <div class="px-4 py-2 text-xs uppercase tracking-wider text-ink-700 font-semibold border-b border-[#DFE1D8] bg-cream">Notifications</div>
-          <div id="notifList">
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+  <!-- Header row -->
+  <div class="flex items-start justify-between flex-wrap gap-4 mb-8">
+    <div>
+      <div class="text-xs font-semibold text-brand-600 uppercase tracking-widest">{{ today_display }}</div>
+      <h1 class="font-display text-4xl font-bold text-ink-900 mt-1">Good day, <span class="italic text-brand-600">Dr. Khan.</span></h1>
+      <p class="text-gray-500 text-sm mt-1">Here is your practice overview.</p>
+    </div>
+    <div class="flex items-center gap-3 flex-wrap">
+      <!-- Notification bell -->
+      <div class="relative" id="notifWrap">
+        <button onclick="document.getElementById('notifDropdown').classList.toggle('hidden')"
+          class="relative w-10 h-10 rounded-full border border-gray-200 bg-white flex items-center justify-center hover:border-brand-500 transition-colors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-5 h-5 text-gray-600"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          {% if notifications %}
+            <span class="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+          {% endif %}
+        </button>
+        <!-- Dropdown -->
+        <div id="notifDropdown" class="hidden absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
+            <span class="font-semibold text-sm text-ink-900">Notifications</span>
+            {% if notifications %}
+              <span class="bg-brand-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">{{ notifications|length }}</span>
+            {% endif %}
+          </div>
+          <div class="max-h-72 overflow-y-auto divide-y divide-gray-100">
             {% if notifications %}
               {% for n in notifications %}
-                <div class="notif-item" data-nid="{{ n.id }}">
-                  <div class="font-semibold">{{ n.message }}</div>
-                  <div class="notif-time">{{ n.created_at[:16] }}</div>
+                <div class="px-4 py-3 hover:bg-gray-50 transition-colors">
+                  <div class="font-medium text-sm text-ink-900">{{ n.title }}</div>
+                  <div class="text-xs text-gray-500 mt-0.5">{{ n.message }}</div>
+                  <div class="text-xs text-gray-400 mt-1 font-mono">{{ n.created_at[:16] }}</div>
+                </div>
               {% endfor %}
             {% else %}
-              <div class="notif-item text-ink-700">No new notifications.</div>
+              <div class="px-4 py-8 text-center text-sm text-gray-400">No new notifications 🔔</div>
             {% endif %}
           </div>
           {% if notifications %}
-          <div class="p-2 border-t border-[#DFE1D8] text-center">
-            <button class="text-xs text-mint-700 font-semibold" onclick="markAllRead()">Mark all as read</button>
-          </div>
+            <div class="border-t px-4 py-2 bg-gray-50 text-center">
+              <form method="post" action="/api/doctor/notifications/read-all">
+                <button class="text-xs text-brand-600 font-semibold hover:text-brand-700">Mark all read</button>
+              </form>
+            </div>
           {% endif %}
         </div>
+      </div>
+      <a href="/api/doctor/book" class="btn btn-primary">+ Book Patient</a>
+      <a href="/api/doctor/patients" class="btn btn-outline">View Patients</a>
     </div>
-    <a href="/api/doctor/patients" class="btn-outline" data-testid="doctor-view-patients">View all patients →</a>
   </div>
 
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
-    {% for label,key in [('Patients','patients'),('Today','today'),('Pending','pending'),('Completed','completed')] %}
-      <div class="card p-6" data-testid="stat-{{ key }}">
-        <div class="text-xs uppercase tracking-[0.2em] text-ink-700 font-semibold">{{ label }}</div>
-        <div class="font-display text-5xl mt-2">{{ stats[key] }}</div>
-    {% endfor %}
+  <!-- Stats row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="card p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-xl">👥</div>
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Patients</div>
+          <div class="font-display text-3xl font-bold text-ink-900">{{ stats.patients }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center text-xl">📅</div>
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Today</div>
+          <div class="font-display text-3xl font-bold text-ink-900">{{ stats.today }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-xl">⏳</div>
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pending</div>
+          <div class="font-display text-3xl font-bold text-ink-900">{{ stats.pending }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-xl">✅</div>
+        <div>
+          <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Completed</div>
+          <div class="font-display text-3xl font-bold text-ink-900">{{ stats.completed }}</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="mt-12 flex items-center justify-between flex-wrap gap-3">
-    <h2 class="font-display text-3xl">Appointments</h2>
-    <div class="flex gap-2 text-sm">
-      {% for f,label in [('today','Today'),('upcoming','Upcoming'),('past','Past'),('all','All')] %}
+  <!-- Quick actions -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+    <a href="/api/doctor/book" class="card p-4 flex items-center gap-3 hover:border-brand-400 hover:shadow-sm transition-all group">
+      <div class="w-10 h-10 rounded-lg bg-ink-900 text-white flex items-center justify-center font-bold text-lg group-hover:bg-brand-600 transition-colors">+</div>
+      <div><div class="font-semibold text-sm">New Booking</div><div class="text-xs text-gray-500">Schedule a patient</div></div>
+    </a>
+    <a href="/api/doctor/patients" class="card p-4 flex items-center gap-3 hover:border-brand-400 hover:shadow-sm transition-all group">
+      <div class="w-10 h-10 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center text-lg group-hover:bg-brand-600 group-hover:text-white transition-colors">👤</div>
+      <div><div class="font-semibold text-sm">Patients</div><div class="text-xs text-gray-500">View directory</div></div>
+    </a>
+    <a href="/api/doctor?filter=today" class="card p-4 flex items-center gap-3 hover:border-brand-400 hover:shadow-sm transition-all group">
+      <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center text-lg">📋</div>
+      <div><div class="font-semibold text-sm">Today</div><div class="text-xs text-gray-500">{{ stats.today }} appointments</div></div>
+    </a>
+    <a href="/api/about" class="card p-4 flex items-center gap-3 hover:border-brand-400 hover:shadow-sm transition-all group">
+      <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-lg">ℹ️</div>
+      <div><div class="font-semibold text-sm">Clinic Info</div><div class="text-xs text-gray-500">Hours & contact</div></div>
+    </a>
+  </div>
+
+  <!-- Appointments section -->
+  <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
+    <h2 class="font-display text-2xl font-bold text-ink-900">Appointments</h2>
+    <div class="flex gap-1 bg-gray-100 p-1 rounded-lg text-sm">
+      {% for f, label in [("upcoming","Upcoming"),("today","Today"),("past","Past"),("all","All")] %}
         <a href="/api/doctor?filter={{ f }}"
-           class="px-4 py-2 rounded-full border {% if active_filter == f %}bg-ink-900 text-cream border-ink-900{% else %}border-[#E4DDCF] hover:border-ink-900{% endif %}"
-           data-testid="filter-{{ f }}">{{ label }}</a>
+           class="px-3 py-1.5 rounded-md font-medium transition-all {{ 'bg-white shadow text-ink-900' if active_filter == f else 'text-gray-500 hover:text-ink-900' }}">
+          {{ label }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if appointments %}
+    <!-- Mobile cards -->
+    <div class="md:hidden space-y-3">
+      {% for a in appointments %}
+        <div class="card p-4">
+          <div class="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-mono bg-brand-50 text-brand-700 px-2 py-0.5 rounded font-semibold">{{ a.date }}</span>
+                <span class="text-xs font-mono text-gray-500 font-semibold">{{ a.time_slot }}</span>
+              </div>
+              <a href="/api/doctor/patient/{{ a.patient_id }}" class="font-semibold text-ink-900 hover:text-brand-600 transition-colors">{{ a.patient_name }}</a>
+              <div class="text-xs text-gray-500 mt-0.5">{{ a.patient_email }}{% if a.patient_phone %} · {{ a.patient_phone }}{% endif %}</div>
+              <div class="text-sm text-gray-600 mt-1">{{ a.reason[:60] }}{% if a.reason|length > 60 %}…{% endif %}</div>
+            </div>
+            <span class="badge badge-{{ a.status }} shrink-0">{{ a.status }}</span>
+          </div>
+          <form method="post" action="/api/doctor/appointment/{{ a.id }}/status" class="flex gap-2 pt-3 border-t border-gray-100">
+            <select name="new_status" class="flex-1 !py-1.5 text-xs">
+              {% for s in ["pending","confirmed","completed","cancelled"] %}
+                <option value="{{ s }}" {% if s == a.status %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+            <button class="btn btn-outline !py-1.5 !px-3 text-xs">Update</button>
+          </form>
+        </div>
       {% endfor %}
     </div>
 
-  {% if appointments %}
-  <div class="mt-6 card overflow-x-auto">
-    <table class="w-full text-sm">
-      <thead class="bg-cream text-left border-b border-[#EFE9DD]">
-        <tr>
-          <th class="px-5 py-3 font-semibold">Date &amp; Time</th>
-          <th class="px-5 py-3 font-semibold">Patient</th>
-          <th class="px-5 py-3 font-semibold">Reason</th>
-          <th class="px-5 py-3 font-semibold">Status</th>
-          <th class="px-5 py-3 font-semibold text-right">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in appointments %}
-          <tr class="border-b border-[#F1EBDE] last:border-0" data-testid="appt-row-{{ a.id }}">
-            <td class="px-5 py-4"><b>{{ a.date }}</b><br/><span class="text-ink-700">{{ a.time_slot }}</span></td>
-            <td class="px-5 py-4">
-              <a href="/api/doctor/patient/{{ a.patient_id }}" class="font-semibold link-underline">{{ a.patient_name }}</a>
-              <div class="text-xs text-ink-700">{{ a.patient_email }}{% if a.patient_phone %} · {{ a.patient_phone }}{% endif %}</div>
-            </td>
-            <td class="px-5 py-4 max-w-xs">{{ a.reason }}</td>
-            <td class="px-5 py-4"><span class="badge badge-{{ a.status }}">{{ a.status }}</span></td>
-            <td class="px-5 py-4">
-              <form method="post" action="/api/doctor/appointment/{{ a.id }}/status" class="flex items-center gap-2 justify-end">
-                <select name="new_status" class="!py-1.5 !px-3 text-xs w-auto" data-testid="status-select-{{ a.id }}">
-                  {% for s in ['pending','confirmed','completed','cancelled'] %}
-                    <option value="{{ s }}" {% if s == a.status %}selected{% endif %}>{{ s }}</option>
-                  {% endfor %}
-                </select>
-                <button class="btn-outline text-xs !py-1.5 !px-3" data-testid="update-status-{{ a.id }}">Update</button>
-              </form>
-            </td>
+    <!-- Desktop table -->
+    <div class="hidden md:block card overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date & Time</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Patient</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Reason</th>
+            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+            <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for a in appointments %}
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-5 py-4">
+                <div class="font-mono text-xs font-semibold text-brand-600">{{ a.date }}</div>
+                <div class="font-mono text-xs text-gray-500 mt-0.5">{{ a.time_slot }}</div>
+              </td>
+              <td class="px-5 py-4">
+                <a href="/api/doctor/patient/{{ a.patient_id }}" class="font-semibold text-ink-900 hover:text-brand-600 transition-colors">{{ a.patient_name }}</a>
+                <div class="text-xs text-gray-500 mt-0.5">{{ a.patient_email }}</div>
+                {% if a.patient_phone %}<div class="text-xs text-gray-500">{{ a.patient_phone }}</div>{% endif %}
+              </td>
+              <td class="px-5 py-4 max-w-xs">
+                <span class="text-gray-700 text-sm">{{ a.reason[:50] }}{% if a.reason|length > 50 %}…{% endif %}</span>
+              </td>
+              <td class="px-5 py-4">
+                <span class="badge badge-{{ a.status }}">{{ a.status }}</span>
+              </td>
+              <td class="px-5 py-4">
+                <form method="post" action="/api/doctor/appointment/{{ a.id }}/status" class="flex items-center gap-2 justify-end">
+                  <select name="new_status" class="!py-1 !px-2 text-xs w-32">
+                    {% for s in ["pending","confirmed","completed","cancelled"] %}
+                      <option value="{{ s }}" {% if s == a.status %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="btn btn-outline !py-1 !px-3 text-xs">Save</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
-    <div class="card p-8 mt-6 text-center text-ink-700">No appointments in this view yet.</div>
+    <div class="card p-12 text-center">
+      <div class="text-4xl mb-3">📋</div>
+      <h3 class="font-display text-2xl font-bold text-ink-900">No appointments</h3>
+      <p class="text-gray-500 mt-2 mb-5">No appointments found for this filter.</p>
+      <a href="/api/doctor/book" class="btn btn-primary">Book a patient</a>
+    </div>
   {% endif %}
+
 </section>
 
 <script>
-// Toggle notification dropdown
-function toggleNotif() {
-  document.getElementById('notifDropdown').classList.toggle('show');
-}
-// Close dropdown on outside click
+// Close notification dropdown when clicking outside
 document.addEventListener('click', function(e) {
-  const bell = document.getElementById('notifBell');
-  if (bell && !bell.contains(e.target)) {
-    const dd = document.getElementById('notifDropdown');
-    if (dd) dd.classList.remove('show');
+  const wrap = document.getElementById('notifWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('notifDropdown').classList.add('hidden');
   }
 });
-// Mark all notifications as read
-async function markAllRead() {
-  const items = document.querySelectorAll('.notif-item[data-nid]');
-  const ids = Array.from(items).map(el => el.dataset.nid);
-  if (!ids.length) return;
-  try {
-    const resp = await fetch('/api/doctor/notifications/read', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ids}),
-    });
-    if (resp.ok) {
-      document.getElementById('notifList').innerHTML = '<div class="notif-item text-ink-700">No new notifications.</div>';
-      document.getElementById('notifDot').style.display = 'none';
-    }
-  } catch(e) {}
-}
-// Poll for new notifications every 15 seconds
-async function pollNotifications() {
-  try {
-    const resp = await fetch('/api/doctor?filter={{ active_filter }}', {headers:{'Accept':'text/html'}});
-    // We can't easily parse HTML here, so we'll just show the dot if there might be notifications
-    // The server-rendered page handles the initial state
-  } catch(e) {}
-}
-// Request browser notification permission on page load
-if ('Notification' in window && Notification.permission === 'default') {
-  Notification.requestPermission();
-}
-// Listen for new appointments via periodic check or SSE (simple poll fallback)
-setInterval(async () => {
-  // Browser notification via polling: if there are new items, we'll notify
-  // This is a lightweight approach without SSE
-  const resp = await fetch('/api/health');
-  // Health check keeps connection alive; actual new booking detection happens server-side
-}, 60000);
 </script>
 {% endblock %}
