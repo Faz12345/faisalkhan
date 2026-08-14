@@ -153,12 +153,6 @@ async def lifespan(app: FastAPI):
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
         logger.info("Seeded doctor account: %s", doctor_email)
-    else:
-        if not verify_password(os.environ["DOCTOR_PASSWORD"], existing["password_hash"]):
-            await db.users.update_one(
-                {"email": doctor_email},
-                {"$set": {"password_hash": hash_password(os.environ["DOCTOR_PASSWORD"])}},
-            )
     yield
     client.close()
 
