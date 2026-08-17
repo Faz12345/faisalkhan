@@ -9,3 +9,4 @@ Jinja2
 python-multipart
 aiohttp
 dnspython
+gunicorn

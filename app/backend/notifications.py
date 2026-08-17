@@ -1,16 +1,20 @@
 """
 Notification system — Smile Care Dental Clinic.
-Channels: In-App (MongoDB), Email (SMTP), WhatsApp (CallMeBot).
+Channels: In-App (MongoDB), Email (Resend HTTPS API), WhatsApp (CallMeBot).
+
+Email previously used raw SMTP (smtplib), but Render's free tier blocks
+outbound traffic on SMTP ports (25, 465, 587) as of Sept 2025. Resend's
+API is called over HTTPS (port 443), which is never blocked, and tends
+to land in the inbox more reliably than SMTP from a shared cloud IP.
 """
 
 import os
 import asyncio
 import logging
-import smtplib
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from typing import Optional
+
+import aiohttp
 
 logger = logging.getLogger("dental.notifications")
 
@@ -47,36 +51,45 @@ async def mark_notifications_read(db, notif_ids: list):
         )
 
 
-# ── Email (SMTP) ──────────────────────────────────────────────────────────────
+# ── Email (Resend API) ──────────────────────────────────────────────────────────
 async def send_email(to_email: str, subject: str, body: str):
-    smtp_host = os.environ.get("SMTP_HOST", "")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    smtp_user = os.environ.get("SMTP_USER", "")
-    smtp_pass = os.environ.get("SMTP_PASS", "")
+    api_key = os.environ.get("RESEND_API_KEY", "")
+    # Until your domain is verified on Resend, this must stay
+    # "onboarding@resend.dev" and can only deliver to the address you
+    # signed up with. After verifying your own domain, set
+    # RESEND_FROM_EMAIL to something like "no-reply@yourdomain.com".
+    from_email = os.environ.get("RESEND_FROM_EMAIL", "onboarding@resend.dev")
 
-    if not smtp_host or not smtp_user:
-        logger.warning("SMTP not configured — skipping email to %s", to_email)
+    if not api_key:
+        logger.warning("RESEND_API_KEY not configured — skipping email to %s", to_email)
         return
 
-    msg = MIMEMultipart()
-    msg["From"] = smtp_user
-    msg["To"] = to_email
-    msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+    payload = {
+        "from": from_email,
+        "to": [to_email],
+        "subject": subject,
+        "text": body,
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
 
-    loop = asyncio.get_event_loop()
-
-    def _send():
-        try:
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
-            logger.info("Email sent to %s", to_email)
-        except Exception as e:
-            logger.error("Email send failed to %s: %s", to_email, e)
-
-    await loop.run_in_executor(None, _send)
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://api.resend.com/emails",
+                json=payload,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as resp:
+                if resp.status in (200, 201):
+                    logger.info("Email sent to %s", to_email)
+                else:
+                    err_text = await resp.text()
+                    logger.error("Email send failed to %s: %s %s", to_email, resp.status, err_text)
+    except Exception as e:
+        logger.error("Email send failed to %s: %s", to_email, e)
 
 
 # ── WhatsApp (CallMeBot) ──────────────────────────────────────────────────────
@@ -105,7 +118,7 @@ async def notify_doctor_on_booking(db, appointment: dict):
     doctor_email = os.environ.get("DOCTOR_EMAIL", "shehzadkhan0101@gmail.com")
     doctor_phone = os.environ.get("DOCTOR_WHATSAPP", "918767308819")
     doctor_name = os.environ.get("DOCTOR_NAME", "Dr. Shehzad Khan")
-    base_url = os.environ.get("BASE_URL", "http://localhost:8000")
+    base_url = os.environ.get("BASE_URL", "http://localhost:8000").strip()
 
     # 1. In-App
     notif = {
@@ -157,7 +170,7 @@ async def notify_patient_on_booking(appointment: dict):
     patient_phone = appointment.get("patient_phone", "")
     doctor_name = os.environ.get("DOCTOR_NAME", "Dr. Shehzad Khan")
     clinic_addr = os.environ.get("CLINIC_ADDRESS", "Dental Clinic, Main Road")
-    base_url = os.environ.get("BASE_URL", "http://localhost:8000")
+    base_url = os.environ.get("BASE_URL", "http://localhost:8000").strip()
 
     subject = "Appointment Confirmed — Smile Care Dental Clinic"
     body = (

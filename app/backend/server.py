@@ -14,7 +14,7 @@ import bcrypt
 import jwt
 from bson import ObjectId
 from fastapi import FastAPI, APIRouter, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,6 +34,19 @@ db = client[os.environ["DB_NAME"]]
 app = FastAPI(title="Smile Care Dental Clinic")
 api_router = APIRouter(prefix="/api")
 app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="static")
+
+# Served at the root path (not under /api/static) so the service worker's
+# default scope is "/" and it can control every page on the site. A worker
+# registered from /api/static/sw.js would only ever be allowed to control
+# pages under /api/static/ unless this header trick were applied anyway —
+# serving it from root is the simplest correct option.
+@app.get("/sw.js")
+async def service_worker():
+    return FileResponse(
+        str(ROOT_DIR / "static" / "sw.js"),
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+    )
 
 templates = Jinja2Templates(directory=str(ROOT_DIR / "templates"))
 
@@ -153,6 +166,12 @@ async def lifespan(app: FastAPI):
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
         logger.info("Seeded doctor account: %s", doctor_email)
+    else:
+        if not verify_password(os.environ["DOCTOR_PASSWORD"], existing["password_hash"]):
+            await db.users.update_one(
+                {"email": doctor_email},
+                {"$set": {"password_hash": hash_password(os.environ["DOCTOR_PASSWORD"])}},
+            )
     yield
     client.close()
 
@@ -281,7 +300,7 @@ async def forgot_password_submit(request: Request, email: str = Form(...)):
     user = await db.users.find_one({"email": email})
     if user:
         token = create_token(str(user["_id"]), user["role"])
-        reset_url = f"{os.environ.get('BASE_URL','http://localhost:8000')}/api/reset-password?token={token}"
+        reset_url = f"{os.environ.get('BASE_URL','http://localhost:8000').strip()}/api/reset-password?token={token}"
         try:
             from notifications import send_password_reset_email
             await send_password_reset_email(email, reset_url)

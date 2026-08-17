@@ -4,7 +4,7 @@
 // The React shell simply redirects the bare domain to the Python app under /api/.
 function App() {
   useEffect(() => {
-    window.location.replace(\"/api/\");
+    window.location.replace(\"/api/");
   }, []);
   return (
     <div
