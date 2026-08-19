@@ -40,7 +40,7 @@ app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="
 # registered from /api/static/sw.js would only ever be allowed to control
 # pages under /api/static/ unless this header trick were applied anyway —
 # serving it from root is the simplest correct option.
-@app.get('health')
+@app.get('/health')
 async def health_check():
     return {'status':'ok'}
 @app.get("/sw.js")
