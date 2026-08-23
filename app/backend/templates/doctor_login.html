@@ -10,6 +10,9 @@
     body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0f1117 0%,#0e6d59 100%);min-height:100vh;}
     input{background:#fff;border:1.5px solid #d1d5db;border-radius:6px;padding:.65rem .9rem;width:100%;font-size:.9rem;outline:none;transition:border-color .15s;}
     input:focus{border-color:#1aaa8c;box-shadow:0 0 0 3px rgba(26,170,140,.2);}
+    .password-field{position:relative;}
+    .password-toggle{display:block;margin:.35rem 0 0 auto;color:#0e6d59;font-size:.75rem;font-weight:600;background:transparent;border:0;cursor:pointer;padding:.15rem .25rem;}
+    .password-toggle:hover{color:#138a71;text-decoration:underline;}
     label{display:block;font-size:.78rem;font-weight:600;color:#e5e7eb;margin-bottom:.3rem;}
     .font-display{font-family:'Playfair Display',serif;}
   </style>
@@ -53,13 +56,13 @@
         </div>
         <div>
           <label>Password</label>
-          <input type="password" name="password" required placeholder="••••••••" autocomplete="current-password"/>
-        <div class="text-right -mt-2">
-  <a href="/api/forgot-password"
-     class="text-white/70 hover:text-white text-xs font-medium">
-    Forgot password?
-  </a>
-</div>
+          <div class="password-field">
+            <input id="doctor-login-password" type="password" name="password" required placeholder="••••••••" autocomplete="current-password"/>
+            <button type="button" class="password-toggle" data-password-toggle aria-controls="doctor-login-password" aria-label="Show password" aria-pressed="false">Show password</button>
+          </div>
+          <div class="text-right -mt-2">
+            <a href="/api/forgot-password" class="text-white/70 hover:text-white text-xs font-medium">Forgot password?</a>
+          </div>
         </div>
         <button type="submit"
           class="w-full py-3 rounded-lg font-semibold text-white transition-all"
@@ -90,5 +93,17 @@
       </a>
     </div>
   </div>
+  <script>
+    document.querySelectorAll('[data-password-toggle]').forEach(function (toggle) {
+      toggle.addEventListener('click', function () {
+        const input = document.getElementById(toggle.getAttribute('aria-controls'));
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        toggle.textContent = isPassword ? 'Hide password' : 'Show password';
+        toggle.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        toggle.setAttribute('aria-pressed', String(isPassword));
+      });
+    });
+  </script>
 </body>
 </html>

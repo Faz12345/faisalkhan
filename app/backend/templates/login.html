@@ -23,7 +23,10 @@
         </div>
         <div>
           <label>Password</label>
-          <input type="password" name="password" required placeholder="••••••••" autocomplete="current-password"/>
+          <div class="password-field">
+            <input id="patient-login-password" type="password" name="password" required placeholder="••••••••" autocomplete="current-password"/>
+            <button type="button" class="password-toggle" data-password-toggle aria-controls="patient-login-password" aria-label="Show password" aria-pressed="false">Show password</button>
+          </div>
         </div>
         <div class="text-right -mt-2">
           <a href="/api/forgot-password" class="text-xs text-brand-600 hover:text-brand-700 font-medium">Forgot password?</a>

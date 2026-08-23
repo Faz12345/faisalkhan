@@ -87,7 +87,16 @@ async def send_email(to_email: str, subject: str, body: str):
                     logger.info("Email sent to %s", to_email)
                 else:
                     err_text = await resp.text()
-                    logger.error("Email send failed to %s: %s %s", to_email, resp.status, err_text)
+                    if resp.status == 403 and "testing emails" in err_text:
+                        logger.error(
+                            "Resend sandbox only allows emails to the account owner. "
+                            "Verify a sending domain and set RESEND_FROM_EMAIL to that "
+                            "domain before emailing %s: %s",
+                            to_email,
+                            err_text,
+                        )
+                    else:
+                        logger.error("Email send failed to %s: %s %s", to_email, resp.status, err_text)
     except Exception as e:
         logger.error("Email send failed to %s: %s", to_email, e)
 

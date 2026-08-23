@@ -44,6 +44,9 @@
     .badge-cancelled{background:#fee2e2;color:#991b1b;}
     input,select,textarea{background:#fff;border:1.5px solid #d1d5db;border-radius:6px;padding:.6rem .85rem;width:100%;font-size:.9rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;}
     input:focus,select:focus,textarea:focus{border-color:#1aaa8c;box-shadow:0 0 0 3px rgba(26,170,140,.15);}
+    .password-field{position:relative;}
+    .password-toggle{display:block;margin:.35rem 0 0 auto;color:#138a71;font-size:.75rem;font-weight:600;background:transparent;border:0;cursor:pointer;padding:.15rem .25rem;}
+    .password-toggle:hover{color:#0e6d59;text-decoration:underline;}
     label{display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:.3rem;letter-spacing:.02em;}
     .nav-link{font-size:.875rem;font-weight:500;color:#374151;transition:color .15s;padding:.2rem 0;}
     .nav-link:hover,.nav-link.active{color:#138a71;}
@@ -162,5 +165,17 @@
 </footer>
 
 {% block extra_scripts %}{% endblock %}
+<script>
+  document.querySelectorAll('[data-password-toggle]').forEach(function (toggle) {
+    toggle.addEventListener('click', function () {
+      const input = document.getElementById(toggle.getAttribute('aria-controls'));
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      toggle.textContent = isPassword ? 'Hide password' : 'Show password';
+      toggle.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+      toggle.setAttribute('aria-pressed', String(isPassword));
+    });
+  });
+</script>
 </body>
 </html>
