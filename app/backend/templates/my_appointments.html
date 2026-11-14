@@ -16,10 +16,16 @@
       <span class="text-2xl">✅</span>
       <div>
         <div class="font-semibold">Appointment booked!</div>
-        <div class="text-sm mt-0.5">Dr. Khan will review and confirm your appointment shortly.</div>
+        <div class="text-sm mt-0.5">Dr. Khan will review your request and add a payment quote here.</div>
       </div>
     </div>
   {% endif %}
+  {% if payment_mode == 'test' %}
+    <div class="mb-6 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl px-5 py-3 text-sm">
+      Razorpay test mode is active. Test payments do not charge real money.
+    </div>
+  {% endif %}
+  <div id="payment-error" class="hidden mb-6 bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-3 text-sm" role="alert"></div>
 
   <!-- Appointments -->
   <div class="flex items-center justify-between mb-4">
@@ -39,14 +45,28 @@
             <div>
               <div class="font-semibold text-ink-900">{{ a.reason }}</div>
               <div class="text-xs text-gray-500 mt-0.5">{{ a.date }} · Dr. Shehzad Khan (BDS)</div>
+              {% if a.payment_status == 'paid' %}
+                <div class="text-sm font-semibold text-green-700 mt-2">Paid · ₹{{ '%.2f'|format(a.payment_amount_paise / 100) }}</div>
+              {% elif a.payment_amount_paise %}
+                <div class="text-sm font-semibold text-ink-900 mt-2">Amount due · ₹{{ '%.2f'|format(a.payment_amount_paise / 100) }}</div>
+              {% else %}
+                <div class="text-xs text-gray-500 mt-2">Payment amount pending doctor’s review</div>
+              {% endif %}
             </div>
           </div>
           <div class="flex items-center gap-3">
             <span class="badge badge-{{ a.status }}">{{ a.status }}</span>
-            {% if a.status in ['pending', 'confirmed'] %}
+            {% if a.payment_amount_paise and a.payment_status != 'paid' and a.status != 'cancelled' %}
+              <button type="button" class="btn btn-primary !py-1.5 !px-3 text-xs"
+                      data-appointment-id="{{ a.id }}" data-appointment-date="{{ a.date }}"
+                      onclick="payAppointment(this)">Pay online</button>
+            {% endif %}
+            {% if a.status in ['pending', 'confirmed'] and a.payment_status != 'paid' %}
               <form method="post" action="/api/appointment/{{ a.id }}/cancel">
                 <button class="btn btn-danger !py-1.5 !px-3 text-xs">Cancel</button>
               </form>
+            {% elif a.payment_status == 'paid' %}
+              <span class="text-xs text-gray-500">Contact clinic for cancellation or refund</span>
             {% endif %}
           </div>
         </div>
@@ -112,4 +132,86 @@
     </div>
   </div>
 </section>
+{% block extra_head %}
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% endblock %}
+<script>
+async function payAppointment(button) {
+  const errorBox = document.getElementById('payment-error');
+  errorBox.classList.add('hidden');
+  button.disabled = true;
+  button.textContent = 'Starting…';
+
+  try {
+    const appointmentId = button.dataset.appointmentId;
+    const response = await fetch('/api/payments/appointment/' + encodeURIComponent(appointmentId) + '/order', {
+      method: 'POST',
+      headers: {'Accept': 'application/json'}
+    });
+    const order = await response.json();
+    if (!response.ok) throw new Error(order.detail || 'Could not start payment.');
+    if (order.paid) {
+      window.location.reload();
+      return;
+    }
+
+    const checkout = new Razorpay({
+      key: order.key_id,
+      amount: order.amount,
+      currency: order.currency,
+      name: 'Smile Care Dental',
+      description: 'Appointment on ' + button.dataset.appointmentDate,
+      order_id: order.order_id,
+      prefill: {
+        name: order.patient_name,
+        email: order.patient_email,
+        contact: order.patient_phone
+      },
+      theme: {color: '#138a71'},
+      handler: async function (payment) {
+        try {
+          const body = new URLSearchParams({
+            razorpay_payment_id: payment.razorpay_payment_id,
+            razorpay_order_id: payment.razorpay_order_id,
+            razorpay_signature: payment.razorpay_signature
+          });
+          const verification = await fetch('/api/payments/appointment/' + encodeURIComponent(appointmentId) + '/verify', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json'},
+            body: body
+          });
+          const result = await verification.json();
+          if (!verification.ok) throw new Error(result.detail || 'Payment verification failed.');
+          window.location.reload();
+        } catch (error) {
+          errorBox.textContent = error.message || 'Could not verify payment. Please contact the clinic before paying again.';
+          errorBox.classList.remove('hidden');
+          button.disabled = false;
+          button.textContent = 'Retry payment';
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          button.disabled = false;
+          button.textContent = 'Pay online';
+        }
+      }
+    });
+    checkout.on('payment.failed', function (event) {
+      errorBox.textContent = event.error && event.error.description
+        ? event.error.description
+        : 'Payment failed. You can try again.';
+      errorBox.classList.remove('hidden');
+      button.disabled = false;
+      button.textContent = 'Retry payment';
+    });
+    checkout.open();
+  } catch (error) {
+    errorBox.textContent = error.message || 'Could not start payment.';
+    errorBox.classList.remove('hidden');
+    button.disabled = false;
+    button.textContent = 'Pay online';
+  }
+}
+</script>
 {% endblock %}

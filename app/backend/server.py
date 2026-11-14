@@ -8,10 +8,15 @@ load_dotenv(ROOT_DIR / ".env", override=True)
 
 import os
 import logging
+import hashlib
+import hmac
+import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone, timedelta, date
+from decimal import Decimal, InvalidOperation
 from typing import Optional
 
+import aiohttp
 import bcrypt
 import jwt
 from bson import ObjectId
@@ -148,6 +153,23 @@ def ctx(request: Request, user: Optional[dict] = None, **extra) -> dict:
         "doctor_email": os.environ.get("DOCTOR_EMAIL", "shehzadkhan0101@gmail.com"),
         **extra,
     }
+
+def _razorpay_credentials() -> tuple[str, str]:
+    key_id = os.environ.get("RAZORPAY_KEY_ID", "").strip()
+    key_secret = os.environ.get("RAZORPAY_KEY_SECRET", "").strip()
+    mode = os.environ.get("RAZORPAY_MODE", "test").strip().lower()
+    expected_prefix = {"test": "rzp_test_", "live": "rzp_live_"}.get(mode)
+    if not expected_prefix:
+        raise HTTPException(status_code=503, detail="Invalid Razorpay mode configuration.")
+    if not key_id or not key_secret:
+        raise HTTPException(status_code=503, detail="Online payments are not configured.")
+    if not key_id.startswith(expected_prefix):
+        raise HTTPException(status_code=503, detail=f"Razorpay {mode} credentials are required.")
+    return key_id, key_secret
+
+def _razorpay_signature(order_id: str, payment_id: str, key_secret: str) -> str:
+    message = f"{order_id}|{payment_id}".encode("utf-8")
+    return hmac.new(key_secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
 
 # ── Lifespan / startup ────────────────────────────────────────────────────────
 @asynccontextmanager
@@ -467,7 +489,10 @@ async def my_appointments(request: Request):
         t.pop("_id", None)
     return templates.TemplateResponse(
         request, "my_appointments.html",
-        ctx(request, user, appointments=appts, treatments=treatments, booked=booked),
+        ctx(
+            request, user, appointments=appts, treatments=treatments, booked=booked,
+            payment_mode=os.environ.get("RAZORPAY_MODE", "test").strip().lower(),
+        ),
     )
 
 @api_router.post("/appointment/{appt_id}/cancel")
@@ -478,10 +503,215 @@ async def cancel_appointment(request: Request, appt_id: str):
     except Exception:
         raise HTTPException(status_code=404, detail="Not found")
     await db.appointments.update_one(
-        {"_id": oid, "patient_id": user["id"], "status": {"$in": ["pending", "confirmed"]}},
+        {
+            "_id": oid,
+            "patient_id": user["id"],
+            "status": {"$in": ["pending", "confirmed"]},
+            "payment_status": {"$ne": "paid"},
+        },
         {"$set": {"status": "cancelled"}},
     )
     return RedirectResponse(url="/api/my-appointments", status_code=303)
+
+@api_router.post("/payments/appointment/{appt_id}/order")
+async def create_appointment_payment_order(request: Request, appt_id: str):
+    user = await require_patient(request)
+    try:
+        oid = ObjectId(appt_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Appointment not found.")
+
+    appointment = await db.appointments.find_one(
+        {"_id": oid, "patient_id": user["id"]}
+    )
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found.")
+    if appointment.get("status") == "cancelled":
+        raise HTTPException(status_code=409, detail="This appointment was cancelled.")
+    amount_paise = appointment.get("payment_amount_paise")
+    if not isinstance(amount_paise, int) or amount_paise < 100:
+        raise HTTPException(status_code=400, detail="The doctor has not set a valid amount.")
+
+    if appointment.get("payment_status") == "paid":
+        return {"paid": True}
+    key_id, key_secret = _razorpay_credentials()
+    if appointment.get("payment_status") == "created" and appointment.get("razorpay_order_id"):
+        order_id = appointment["razorpay_order_id"]
+    else:
+        now = datetime.now(timezone.utc)
+        payment_status = appointment.get("payment_status")
+        if payment_status == "creating":
+            started_at = appointment.get("payment_order_started_at")
+            try:
+                started_at = datetime.fromisoformat(started_at)
+                if started_at.tzinfo is None:
+                    started_at = started_at.replace(tzinfo=timezone.utc)
+            except (TypeError, ValueError):
+                started_at = now - timedelta(minutes=2)
+            if now - started_at < timedelta(minutes=1):
+                raise HTTPException(status_code=409, detail="Payment setup is already in progress. Try again shortly.")
+            claim_filter = {
+                "_id": oid, "patient_id": user["id"], "status": {"$ne": "cancelled"},
+                "payment_status": "creating", "payment_order_started_at": appointment.get("payment_order_started_at"),
+            }
+        else:
+            claim_filter = {
+                "_id": oid, "patient_id": user["id"], "status": {"$ne": "cancelled"},
+                "payment_status": {"$nin": ["paid", "creating"]},
+            }
+        started_at = now.isoformat()
+        claimed = await db.appointments.update_one(
+            claim_filter,
+            {"$set": {"payment_status": "creating", "payment_order_started_at": started_at}},
+        )
+        if not claimed.modified_count:
+            raise HTTPException(status_code=409, detail="Payment status changed. Refresh and try again.")
+
+        payload = {
+            "amount": amount_paise,
+            "currency": "INR",
+            "receipt": f"appt_{appt_id}",
+            "notes": {"appointment_id": appt_id},
+        }
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    "https://api.razorpay.com/v1/orders",
+                    json=payload,
+                    auth=aiohttp.BasicAuth(key_id, key_secret),
+                    timeout=aiohttp.ClientTimeout(total=20),
+                ) as response:
+                    response_data = await response.json(content_type=None)
+                    if response.status not in (200, 201):
+                        logger.error("Razorpay order creation failed with status %s", response.status)
+                        raise HTTPException(status_code=502, detail="Could not start payment. Please try again.")
+        except HTTPException:
+            await db.appointments.update_one(
+                {"_id": oid, "payment_status": "creating", "payment_order_started_at": started_at},
+                {"$set": {"payment_status": "unpaid"}, "$unset": {"payment_order_started_at": ""}},
+            )
+            raise
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as exc:
+            logger.error("Razorpay order request failed: %s", exc)
+            await db.appointments.update_one(
+                {"_id": oid, "payment_status": "creating", "payment_order_started_at": started_at},
+                {"$set": {"payment_status": "unpaid"}, "$unset": {"payment_order_started_at": ""}},
+            )
+            raise HTTPException(status_code=502, detail="Could not reach the payment service. Please try again.")
+
+        if not isinstance(response_data, dict):
+            response_data = {}
+        order_id = response_data.get("id")
+        if (
+            not order_id
+            or response_data.get("amount") != amount_paise
+            or response_data.get("currency") != "INR"
+        ):
+            logger.error("Razorpay returned an invalid order response.")
+            await db.appointments.update_one(
+                {"_id": oid, "payment_status": "creating", "payment_order_started_at": started_at},
+                {"$set": {"payment_status": "unpaid"}, "$unset": {"payment_order_started_at": ""}},
+            )
+            raise HTTPException(status_code=502, detail="Payment service returned an invalid order.")
+
+        saved = await db.appointments.update_one(
+            {
+                "_id": oid, "patient_id": user["id"], "status": {"$ne": "cancelled"},
+                "payment_status": "creating", "payment_order_started_at": started_at,
+            },
+            {
+                "$set": {
+                    "payment_status": "created",
+                    "razorpay_order_id": order_id,
+                },
+                "$unset": {"payment_order_started_at": ""},
+            },
+        )
+        if not saved.modified_count:
+            raise HTTPException(status_code=409, detail="Appointment changed before payment could start.")
+
+    return {
+        "key_id": key_id,
+        "order_id": order_id,
+        "amount": amount_paise,
+        "currency": "INR",
+        "patient_name": user.get("name", ""),
+        "patient_email": user.get("email", ""),
+        "patient_phone": user.get("phone", ""),
+    }
+
+@api_router.post("/payments/appointment/{appt_id}/verify")
+async def verify_appointment_payment(
+    request: Request,
+    appt_id: str,
+    razorpay_payment_id: str = Form(...),
+    razorpay_order_id: str = Form(...),
+    razorpay_signature: str = Form(...),
+):
+    user = await require_patient(request)
+    try:
+        oid = ObjectId(appt_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Appointment not found.")
+
+    appointment = await db.appointments.find_one(
+        {"_id": oid, "patient_id": user["id"]}
+    )
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found.")
+    key_id, key_secret = _razorpay_credentials()
+    expected_signature = _razorpay_signature(razorpay_order_id, razorpay_payment_id, key_secret)
+    if not razorpay_signature.isascii() or not hmac.compare_digest(razorpay_signature, expected_signature):
+        raise HTTPException(status_code=400, detail="Payment signature verification failed.")
+    if appointment.get("razorpay_order_id") != razorpay_order_id:
+        raise HTTPException(status_code=400, detail="Payment order does not match this appointment.")
+    if appointment.get("payment_status") == "paid":
+        if appointment.get("razorpay_payment_id") == razorpay_payment_id:
+            return {"paid": True}
+        raise HTTPException(status_code=409, detail="This appointment is already paid.")
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"https://api.razorpay.com/v1/payments/{razorpay_payment_id}",
+                auth=aiohttp.BasicAuth(key_id, key_secret),
+                timeout=aiohttp.ClientTimeout(total=20),
+            ) as response:
+                payment_data = await response.json(content_type=None)
+    except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as exc:
+        logger.error("Razorpay payment verification request failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Could not verify payment. Please retry.")
+    if response.status != 200:
+        logger.error("Razorpay payment lookup failed with status %s", response.status)
+        raise HTTPException(status_code=502, detail="Could not verify payment. Please retry.")
+    if not isinstance(payment_data, dict) or (
+        payment_data.get("status") != "captured"
+        or payment_data.get("order_id") != razorpay_order_id
+        or payment_data.get("amount") != appointment.get("payment_amount_paise")
+        or payment_data.get("currency") != "INR"
+    ):
+        raise HTTPException(status_code=400, detail="Payment is not captured for the quoted amount.")
+
+    updated = await db.appointments.update_one(
+        {
+            "_id": oid, "patient_id": user["id"],
+            "razorpay_order_id": razorpay_order_id,
+            "payment_status": {"$ne": "paid"},
+        },
+        {
+            "$set": {
+                "payment_status": "paid",
+                "razorpay_payment_id": razorpay_payment_id,
+                "payment_paid_at": datetime.now(timezone.utc).isoformat(),
+            },
+        },
+    )
+    if not updated.modified_count:
+        latest = await db.appointments.find_one({"_id": oid, "patient_id": user["id"]})
+        if latest and latest.get("payment_status") == "paid" and latest.get("razorpay_payment_id") == razorpay_payment_id:
+            return {"paid": True}
+        raise HTTPException(status_code=409, detail="Payment status changed. Refresh the page.")
+    return {"paid": True}
 
 # ── Doctor dashboard ──────────────────────────────────────────────────────────
 @api_router.get("/doctor", response_class=HTMLResponse)
@@ -552,6 +782,55 @@ async def update_appointment_status(
     referer = request.headers.get("referer", "")
     if f"/patient/{patient_id}" in referer:
         return RedirectResponse(url=f"/api/doctor/patient/{patient_id}", status_code=303)
+    return RedirectResponse(url="/api/doctor", status_code=303)
+
+@api_router.post("/doctor/appointment/{appt_id}/quote")
+async def set_appointment_payment_quote(
+    request: Request,
+    appt_id: str,
+    amount_inr: str = Form(...),
+):
+    await require_doctor(request)
+    try:
+        oid = ObjectId(appt_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Appointment not found.")
+    try:
+        amount = Decimal(amount_inr.strip())
+        amount_paise_decimal = amount * 100
+        if not amount.is_finite() or amount_paise_decimal != amount_paise_decimal.to_integral_value():
+            raise InvalidOperation
+        amount_paise = int(amount_paise_decimal)
+    except (InvalidOperation, ValueError):
+        raise HTTPException(status_code=400, detail="Enter an amount with up to two decimal places.")
+    if amount_paise < 100:
+        raise HTTPException(status_code=400, detail="The amount must be at least ₹1.")
+
+    appointment = await db.appointments.find_one({"_id": oid})
+    if not appointment:
+        raise HTTPException(status_code=404, detail="Appointment not found.")
+    if appointment.get("status") == "cancelled":
+        raise HTTPException(status_code=409, detail="A cancelled appointment cannot be quoted.")
+    if appointment.get("payment_status") == "paid":
+        raise HTTPException(status_code=409, detail="A paid appointment quote cannot be changed.")
+    if appointment.get("payment_status") in {"creating", "created"}:
+        raise HTTPException(status_code=409, detail="A payment is already in progress; the quote cannot be changed.")
+
+    updated = await db.appointments.update_one(
+        {
+            "_id": oid,
+            "payment_status": {"$nin": ["paid", "creating", "created"]},
+        },
+        {
+            "$set": {
+                "payment_amount_paise": amount_paise,
+                "payment_status": "unpaid",
+                "payment_quoted_at": datetime.now(timezone.utc).isoformat(),
+            },
+        },
+    )
+    if not updated.modified_count:
+        raise HTTPException(status_code=409, detail="Appointment payment status changed. Refresh and retry.")
     return RedirectResponse(url="/api/doctor", status_code=303)
 
 # ── Doctor: book a patient ────────────────────────────────────────────────────
