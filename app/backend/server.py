@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
 from pathlib import Path
+from ipaddress import ip_address
+from hmac import compare_digest
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env", override=True)
@@ -293,25 +295,69 @@ async def doctor_logout():
     return resp
 
 # ── Password reset ────────────────────────────────────────────────────────────
+def _is_local_request(request: Request) -> bool:
+    if not request.client or request.url.hostname not in {"localhost", "127.0.0.1", "::1"}:
+        return False
+    try:
+        return ip_address(request.client.host).is_loopback
+    except ValueError:
+        return False
+
 @api_router.get("/forgot-password", response_class=HTMLResponse)
 async def forgot_password_page(request: Request):
-    return templates.TemplateResponse(request, "forgot_password.html", ctx(request, None, error=None, success=None))
-
-@api_router.post("/forgot-password")
-async def forgot_password_submit(request: Request, email: str = Form(...)):
-    email = email.strip().lower()
-    user = await db.users.find_one({"email": email})
-    if user:
-        token = create_token(str(user["_id"]), user["role"])
-        reset_url = f"{os.environ.get('BASE_URL','http://localhost:8000').strip()}/api/reset-password?token={token}"
-        try:
-            from notifications import send_password_reset_email
-            await send_password_reset_email(email, reset_url)
-        except Exception as e:
-            logger.error("Reset email error: %s", e)
     return templates.TemplateResponse(
         request, "forgot_password.html",
-        ctx(request, None, error=None, success="If that email exists, a reset link was sent."),
+        ctx(
+            request, None, error=None, success=None, local_reset_url=None,
+            local_request=_is_local_request(request),
+        ),
+    )
+
+@api_router.post("/forgot-password")
+async def forgot_password_submit(
+    request: Request,
+    email: str = Form(...),
+    local_reset_code: str = Form(""),
+):
+    email = email.strip().lower()
+    user = await db.users.find_one({"email": email})
+    local_reset_url = None
+    local_request = _is_local_request(request)
+    expected_local_reset_code = os.environ.get("LOCAL_PASSWORD_RESET_CODE", "")
+    local_reset_authorized = (
+        local_request
+        and bool(expected_local_reset_code)
+        and compare_digest(local_reset_code, expected_local_reset_code)
+    )
+    if user:
+        token = create_token(str(user["_id"]), user["role"])
+        if local_request:
+            if local_reset_authorized:
+                local_reset_url = (
+                    f"http://localhost:{request.url.port or 8000}"
+                    f"/api/reset-password?token={token}"
+                )
+        else:
+            reset_url = f"{os.environ.get('BASE_URL','http://localhost:8000').strip()}/api/reset-password?token={token}"
+            try:
+                from notifications import send_password_reset_email
+                await send_password_reset_email(email, reset_url)
+            except Exception as e:
+                logger.error("Reset email error: %s", e)
+    return templates.TemplateResponse(
+        request, "forgot_password.html",
+        ctx(
+            request, None, error=None,
+            success=(
+                "If that email exists, a local test reset link is shown below."
+                if local_reset_authorized
+                else "Local test link not shown. Enter the configured local test code."
+                if local_request
+                else "If that email exists, a reset link was sent."
+            ),
+            local_reset_url=local_reset_url,
+            local_request=local_request,
+        ),
     )
 
 @api_router.get("/reset-password", response_class=HTMLResponse)
