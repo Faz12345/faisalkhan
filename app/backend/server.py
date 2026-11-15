@@ -19,23 +19,25 @@ from typing import Optional
 import aiohttp
 import bcrypt
 import jwt
-from bson import ObjectId
 from fastapi import FastAPI, APIRouter, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
-
-from notifications import (
-    notify_both_on_booking,
-    get_unread_notifications,
-    mark_notifications_read,
-)
-
-# ── DB ───────────────────────────────────────────────────────────────────────
-client = AsyncIOMotorClient(os.environ["MONGO_URL"])
-db = client[os.environ["DB_NAME"]]
+if __package__:
+    from .postgres_store import db, parse_document_id
+    from .notifications import (
+        notify_both_on_booking,
+        get_unread_notifications,
+        mark_notifications_read,
+    )
+else:
+    from postgres_store import db, parse_document_id
+    from notifications import (
+        notify_both_on_booking,
+        get_unread_notifications,
+        mark_notifications_read,
+    )
 
 # ── App ──────────────────────────────────────────────────────────────────────
 app = FastAPI(title="Smile Care Dental Clinic")
@@ -107,7 +109,7 @@ def clear_auth_cookies(response: Response):
 async def _decode_token(token: str) -> Optional[dict]:
     try:
         payload = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=[JWT_ALGORITHM])
-        user = await db.users.find_one({"_id": ObjectId(payload["sub"])})
+        user = await db.users.find_one({"_id": parse_document_id(payload["sub"])})
         if not user:
             return None
         user["id"] = str(user["_id"])
@@ -174,12 +176,7 @@ def _razorpay_signature(order_id: str, payment_id: str, key_secret: str) -> str:
 # ── Lifespan / startup ────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await db.users.create_index("email", unique=True)
-    await db.appointments.create_index([("date", 1), ("time_slot", 1)])
-    await db.appointments.create_index("patient_id")
-    await db.treatments.create_index("patient_id")
-    await db.notifications.create_index("read")
-    await db.notifications.create_index("created_at")
+    await db.create_tables()
 
     doctor_email = os.environ["DOCTOR_EMAIL"].lower()
     existing = await db.users.find_one({"email": doctor_email})
@@ -200,7 +197,7 @@ async def lifespan(app: FastAPI):
                 {"$set": {"password_hash": hash_password(os.environ["DOCTOR_PASSWORD"])}},
             )
     yield
-    client.close()
+    await db.close()
 
 app.router.lifespan_context = lifespan
 
@@ -415,7 +412,7 @@ async def reset_password_submit(
             status_code=400,
         )
     await db.users.update_one(
-        {"_id": ObjectId(user_id)},
+        {"_id": parse_document_id(user_id)},
         {"$set": {"password_hash": hash_password(password)}},
     )
     return RedirectResponse(url="/api/login", status_code=303)
@@ -499,7 +496,7 @@ async def my_appointments(request: Request):
 async def cancel_appointment(request: Request, appt_id: str):
     user = await require_patient(request)
     try:
-        oid = ObjectId(appt_id)
+        oid = parse_document_id(appt_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Not found")
     await db.appointments.update_one(
@@ -517,7 +514,7 @@ async def cancel_appointment(request: Request, appt_id: str):
 async def create_appointment_payment_order(request: Request, appt_id: str):
     user = await require_patient(request)
     try:
-        oid = ObjectId(appt_id)
+        oid = parse_document_id(appt_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Appointment not found.")
 
@@ -650,7 +647,7 @@ async def verify_appointment_payment(
 ):
     user = await require_patient(request)
     try:
-        oid = ObjectId(appt_id)
+        oid = parse_document_id(appt_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Appointment not found.")
 
@@ -771,7 +768,7 @@ async def update_appointment_status(
     if new_status not in valid:
         raise HTTPException(status_code=400, detail="Invalid status")
     try:
-        oid = ObjectId(appt_id)
+        oid = parse_document_id(appt_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Not found")
     appt = await db.appointments.find_one({"_id": oid})
@@ -792,7 +789,7 @@ async def set_appointment_payment_quote(
 ):
     await require_doctor(request)
     try:
-        oid = ObjectId(appt_id)
+        oid = parse_document_id(appt_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Appointment not found.")
     try:
@@ -853,7 +850,7 @@ async def doctor_book_page(request: Request, date_str: Optional[str] = None, pat
     selected_patient = None
     if patient_id:
         try:
-            p = await db.users.find_one({"_id": ObjectId(patient_id), "role": "patient"})
+            p = await db.users.find_one({"_id": parse_document_id(patient_id), "role": "patient"})
             if p:
                 selected_patient = {"id": str(p["_id"]), "name": p["name"], "email": p["email"]}
         except Exception:
@@ -891,7 +888,7 @@ async def doctor_book_submit(
     if time_slot not in TIME_SLOTS:
         raise HTTPException(status_code=400, detail="Invalid time slot")
     try:
-        patient_oid = ObjectId(patient_id)
+        patient_oid = parse_document_id(patient_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Patient not found")
     patient = await db.users.find_one({"_id": patient_oid, "role": "patient"})
@@ -967,7 +964,7 @@ async def doctor_patients(request: Request, q: str = ""):
 async def doctor_patient_detail(request: Request, patient_id: str):
     doctor = await require_doctor(request)
     try:
-        oid = ObjectId(patient_id)
+        oid = parse_document_id(patient_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Not found")
     patient = await db.users.find_one({"_id": oid, "role": "patient"})
@@ -1006,7 +1003,7 @@ async def add_treatment_note(
 ):
     await require_doctor(request)
     try:
-        oid = ObjectId(patient_id)
+        oid = parse_document_id(patient_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Not found")
     patient = await db.users.find_one({"_id": oid, "role": "patient"})
@@ -1033,7 +1030,7 @@ async def add_treatment_note(
 async def doctor_delete_appointment(request: Request, patient_id: str, appt_id: str):
     await require_doctor(request)
     try:
-        oid = ObjectId(appt_id)
+        oid = parse_document_id(appt_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Not found")
     await db.appointments.delete_one({"_id": oid})

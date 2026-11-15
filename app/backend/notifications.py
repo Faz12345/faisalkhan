@@ -1,6 +1,6 @@
 """
 Notification system — Smile Care Dental Clinic.
-Channels: In-App (MongoDB), Email (Resend HTTPS API), WhatsApp (CallMeBot).
+Channels: In-App (PostgreSQL), Email (Resend HTTPS API), WhatsApp (CallMeBot).
 
 Email previously used raw SMTP (smtplib), but Render's free tier blocks
 outbound traffic on SMTP ports (25, 465, 587) as of Sept 2025. Resend's
@@ -19,7 +19,7 @@ import aiohttp
 logger = logging.getLogger("dental.notifications")
 
 
-# ── In-App (MongoDB) ──────────────────────────────────────────────────────────
+# ── In-App (PostgreSQL) ───────────────────────────────────────────────────────
 async def store_inapp_notification(db, notification: dict):
     await db.notifications.insert_one({
         **notification,
@@ -37,16 +37,9 @@ async def get_unread_notifications(db) -> list:
 
 
 async def mark_notifications_read(db, notif_ids: list):
-    from bson import ObjectId
-    oids = []
-    for nid in notif_ids:
-        try:
-            oids.append(ObjectId(nid))
-        except Exception:
-            pass
-    if oids:
+    if notif_ids:
         await db.notifications.update_many(
-            {"_id": {"$in": oids}},
+            {"_id": {"$in": notif_ids}},
             {"$set": {"read": True}},
         )
 
