@@ -11,12 +11,15 @@ to land in the inbox more reliably than SMTP from a shared cloud IP.
 import os
 import asyncio
 import logging
+import re
 from datetime import datetime
 from typing import Optional
+from xml.sax.saxutils import escape
 
 import aiohttp
 
 logger = logging.getLogger("dental.notifications")
+E164_PHONE_PATTERN = re.compile(r"^\+[1-9]\d{7,14}$")
 
 
 # ── In-App (PostgreSQL) ───────────────────────────────────────────────────────
@@ -115,6 +118,61 @@ async def send_whatsapp(phone: str, message: str):
         logger.error("WhatsApp failed for %s: %s", phone, e)
 
 
+# ── Voice call (Twilio) ──────────────────────────────────────────────────────
+def build_visit_call_message(appointment: dict) -> str:
+    patient_name = appointment.get("patient_name") or "there"
+    reason = appointment.get("reason") or "the reason for your visit"
+    treatment = appointment.get("treatment") or (
+        "Your doctor will discuss the appropriate treatment with you during your visit."
+    )
+    return (
+        f"Hello {patient_name}. This is a message from Smile Care Dental Clinic "
+        f"about your doctor visit on {appointment['date']} at {appointment['time_slot']}. "
+        f"The reason for your visit is {reason}. Treatment: {treatment} "
+        "Please contact the clinic if you have any questions. Goodbye."
+    )
+
+
+def _visit_call_twiml(message: str) -> str:
+    return f'<Response><Say voice="alice" language="en-US">{escape(message)}</Say></Response>'
+
+
+async def send_voice_call(phone: str, message: str):
+    account_sid = os.environ.get("TWILIO_ACCOUNT_SID", "").strip()
+    auth_token = os.environ.get("TWILIO_AUTH_TOKEN", "").strip()
+    from_number = os.environ.get("TWILIO_FROM_NUMBER", "").strip()
+    if not account_sid or not auth_token or not from_number:
+        logger.warning("Twilio is not configured — skipping patient call")
+        return
+    if not phone or not E164_PHONE_PATTERN.fullmatch(phone.strip()):
+        logger.warning("Skipping Twilio call: patient phone must be in E.164 format")
+        return
+    if not E164_PHONE_PATTERN.fullmatch(from_number):
+        logger.error("Twilio call skipped: TWILIO_FROM_NUMBER must be in E.164 format")
+        return
+
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Calls.json"
+    payload = {
+        "To": phone.strip(),
+        "From": from_number,
+        "Twiml": _visit_call_twiml(message),
+    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                url,
+                data=payload,
+                auth=aiohttp.BasicAuth(account_sid, auth_token),
+                timeout=aiohttp.ClientTimeout(total=15),
+            ) as resp:
+                if resp.status in (200, 201):
+                    logger.info("Patient appointment call accepted by Twilio")
+                else:
+                    logger.error("Twilio call request failed with status %s", resp.status)
+    except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+        logger.error("Twilio call request failed: %s", e)
+
+
 # ── Doctor notification ───────────────────────────────────────────────────────
 async def notify_doctor_on_booking(db, appointment: dict):
     doctor_email = os.environ.get("DOCTOR_EMAIL", "shehzadkhan0101@gmail.com")
@@ -182,6 +240,7 @@ async def notify_patient_on_booking(appointment: dict):
         f"Date    : {appointment['date']}\n"
         f"Time    : {appointment['time_slot']}\n"
         f"Reason  : {appointment.get('reason', 'N/A')}\n\n"
+        f"Treatment: {appointment.get('treatment') or 'To be discussed with the doctor during the visit.'}\n\n"
         f"Address : {clinic_addr}\n\n"
         f"Manage appointments: {base_url}/api/my-appointments\n\n"
         f"Thank you for choosing Smile Care!\n"
@@ -200,6 +259,9 @@ async def notify_patient_on_booking(appointment: dict):
     )
     if patient_phone:
         asyncio.ensure_future(send_whatsapp(patient_phone, wa_msg))
+        asyncio.ensure_future(
+            send_voice_call(patient_phone, build_visit_call_message(appointment))
+        )
 
 
 # ── Master function ───────────────────────────────────────────────────────────

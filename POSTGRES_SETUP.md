@@ -23,6 +23,22 @@ confirm current terms in the Neon console.
 The app creates its PostgreSQL tables and indexes on startup. Keep the existing
 `JWT_SECRET`, `DOCTOR_EMAIL`, `DOCTOR_PASSWORD`, and `DOCTOR_NAME` settings too.
 
+## Configure patient appointment calls
+
+Patient booking confirmations are emailed through Resend. To also call the
+patient with the appointment date, time, reason for the visit, and treatment
+plan (or a note that the doctor will discuss treatment during the visit), set
+these variables in `app/backend/.env` and in the hosting provider's environment:
+
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_FROM_NUMBER` — your Twilio voice-enabled number in E.164 format
+
+Patient phone numbers must also be saved in E.164 format (for example,
+`+14155552671`). Calls are skipped with a log message if Twilio is not
+configured or a phone number is invalid. Twilio trial accounts may only call
+verified destination numbers. Keep the auth token private.
+
 ## Copy existing MongoDB data
 
 1. Back up the MongoDB database before starting.
